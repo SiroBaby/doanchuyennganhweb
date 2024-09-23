@@ -20,7 +20,9 @@ const Home: React.FC = () => {
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading users</div>;
+  if (error) return <div className="bg-green-400 text-center">
+    <h1>Lỗi rồi</h1>
+  </div>;
 
   return (
     <div className="container mx-auto p-4">
@@ -47,12 +49,19 @@ const Home: React.FC = () => {
           placeholder="Email"
           className="border p-2"
         />
-        <button
+        <button 
           onClick={handleAddUser}
-          className="bg-blue-500 text-white p-2"
+          className="dark:md:hover:bg-fuchsia-600 ..."
         >
           Add User
         </button>
+
+        <button className="bg-violet-500 hover:bg-violet-600 active:bg-violet-700 focus:outline-none focus:ring focus:ring-violet-300 ...">
+  Save changes
+</button>
+<h1 className="text-3xl font-bold underline">
+    Hello world!
+  </h1>
       </div>
     </div>
   );
