@@ -24,10 +24,20 @@ const userRouter = t.router({
       },
     });
   }),
-});
+  deleteUser: t.procedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    return await prisma.user.delete({
+      where: { id: input.id }, // lấy ID từ body
+    });
+  }),
+});;
+
 
 app.use(cors());
 app.use('', createExpressMiddleware({ router: userRouter }));
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
 app.listen(4000, () => {
   console.log('Server is running on http://localhost:4000');
