@@ -33,7 +33,7 @@ const userRouter = t.router({
 
 
 app.use(cors());
-app.use('', createExpressMiddleware({ router: userRouter }));
+app.use('/trpc', createExpressMiddleware({ router: userRouter }));
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
