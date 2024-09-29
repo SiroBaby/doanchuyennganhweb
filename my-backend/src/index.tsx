@@ -1,8 +1,8 @@
-import express from 'express';
-import cors from 'cors';
-import { initTRPC } from '@trpc/server';
 import { PrismaClient } from '@prisma/client';
+import { initTRPC } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
+import cors from 'cors';
+import express from 'express';
 import { z } from 'zod';
 
 const app = express();
