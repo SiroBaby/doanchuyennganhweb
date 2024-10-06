@@ -1,6 +1,14 @@
-import React from 'react'
+"use client";
+import { useEffect } from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "../globals.css";
 
-const page = () => {
+const Home = () => {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+    }
+  }, []);
   return (
     <div className="flex justify-center items-center min-h-screen bg-blue-100">
       <div className="p-6 bg-white rounded-lg shadow-lg">
@@ -8,7 +16,7 @@ const page = () => {
         <p className="mt-2 text-gray-600">Testing Tailwind CSS</p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default page
+export default Home;
