@@ -9,7 +9,7 @@ import { SvgIcon } from "@mui/material";
 const LeftSideBar = () => {
   return (
     <div className="h-screen w-60 left-0 top-0 sticky flex flex-col bg-white shadow-xl">
-      <div className=" flex justify-center m-3">
+      <div className="h-32 flex justify-center">
         <Image src="/logo/logo.png" width={120} height={0} alt="logo" />
       </div>
       <div className="left-0">

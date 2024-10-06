@@ -16,6 +16,7 @@ module.exports = {
         'outline': '#E8E8E8',
         'selected-corlor': '#E2ECF1',
         'custom-red': '#FF5E5E',
+        'admin-nav': '#E5ECF6',
       },
     },
   },
