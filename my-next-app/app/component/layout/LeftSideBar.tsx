@@ -8,14 +8,14 @@ import { SvgIcon } from "@mui/material";
 //h-screen left-0 top-0 sticky p-10 flex flex-col gap-16 bg-slate-400 shadow-xl
 const LeftSideBar = () => {
   return (
-    <div className="h-screen w-60 left-0 top-0 sticky flex flex-col bg-white shadow-xl dark:bg-dark-sidebar">
+    <div className="h-screen w-60 left-0 top-0 sticky flex flex-col bg-white shadow-xl dark:bg-dark-sidebar transition-colors duration-200">
       <div className="h-32 flex justify-center">
         <Image src="/logo/logo.png" width={120} height={0} alt="logo" />
       </div>
       <div className="left-0 dark:text-dark-text">
         <ul>
           <li className="border-b border-outline dark:border-dark-outline"></li>
-          <li className="flex p-4 text-2xl font-semibold  bg-selected-corlor dark:bg-dark-selected pl-9 items-center cursor-pointer border-r-8 border-custom-red">
+          <li className="flex p-4 text-2xl font-semibold  bg-selected-corlor dark:bg-dark-selected transition-colors duration-200 pl-9 items-center cursor-pointer border-r-8 border-custom-red">
             <SvgIcon component={DashboardIcon} className=" h-auto w-8 text-custom-red"/>
             <span className="ml-2 text-2xl font-bold">Dashboard</span>
           </li>
