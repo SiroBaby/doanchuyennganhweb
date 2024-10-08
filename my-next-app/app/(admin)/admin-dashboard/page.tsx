@@ -3,7 +3,7 @@ import AdminLayout from '../layout';
 
 const page = () => {
   return (
-        <div className='col-span-2 dark:bg-slate-500'>Đây là admin</div>
+        <div className='col-span-2 dark:bg-dark-body dark:text-dark-text h-screen'>Đây là admin</div>
   )
 }
 

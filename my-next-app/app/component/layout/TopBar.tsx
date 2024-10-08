@@ -24,7 +24,7 @@ const TopBar = () => {
   };
 
   return (
-    <div className="h-32 bg-[#F4F7FE] dark:bg-slate-600">
+    <div className="h-32 bg-[#F4F7FE] dark:bg-dark-sidebar dark:text-dark-text">
       <nav className="flex justify-between items-center h-full px-12">
         <div>
           <h1 className="text-4xl font-bold">Dashboard</h1>
@@ -33,7 +33,7 @@ const TopBar = () => {
         <div className="flex items-center space-x-13">
           <FormControl variant="standard" sx={{ m: 1, minWidth: 10 }}>
             <Select
-              className="text-black"
+              className="text-black dark:text-dark-text"
               labelId="demo-simple-select-standard-label"
               id="demo-simple-select-standard"
               value={Language}
