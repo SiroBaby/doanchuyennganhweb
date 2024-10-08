@@ -7,7 +7,7 @@ import Image from "next/image";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import testImage from "../../../public/capybara.jpg";
-import { toggleDarkMode } from "@/app/store/slices/darkmodeSlices";
+import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
 
 const TopBar = () => {
   const [username, setUsername] = useState("Name");

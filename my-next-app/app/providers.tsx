@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store/store';
-import { setDarkMode } from './store/slices/darkmodeSlices';
+import { setDarkMode } from './store/slices/darkModeSlices';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return <Provider store={store}>{children}</Provider>;
