@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import {FormControl, MenuItem,  SvgIcon} from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
@@ -10,10 +10,10 @@ import testImage from "../../../public/capybara.jpg";
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
 
 const TopBar = () => {
-  const [username, setUsername] = useState("Name");
+  //const [username, setUsername] = useState("Name");
   const [Language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
-  const darkMode = useSelector((state: any) => state.darkMode.darkMode);
+  const darkMode = useSelector((state: {darkMode: {darkMode: boolean}}) => state.darkMode.darkMode);
 
   const handleToggleDarkMode = () => {
     dispatch(toggleDarkMode());
@@ -29,7 +29,6 @@ const TopBar = () => {
         <div>
           <h1 className="text-4xl font-bold">Dashboard</h1>
         </div>
-
         <div className="flex items-center space-x-13">
           <FormControl variant="standard" sx={{ m: 1, minWidth: 10 }}>
             <Select
@@ -58,7 +57,7 @@ const TopBar = () => {
                 className="object-cover"
               />
             </div>
-            <span className="ml-3 text-lg">Hi, {username}</span>
+            <span className="ml-3 text-lg">Hi, Name</span>
           </div>
         </div>
       </nav>

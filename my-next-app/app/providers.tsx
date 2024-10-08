@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
 // Tạo một component riêng để xử lý dark mode
 export function DarkModeHandler() {
-  const darkMode = useSelector((state: any) => state.darkMode.darkMode);
+  const darkMode = useSelector((state: {darkMode: {darkMode: boolean}}) => state.darkMode.darkMode);
   const dispatch = useDispatch();
 
   useEffect(() => {
