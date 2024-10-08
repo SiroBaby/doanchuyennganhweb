@@ -1,23 +1,30 @@
 "use client";
 import React, { useState } from "react";
-import Box from "@mui/material/Box";
-import {colors, FormControl, InputLabel,  MenuItem,  SvgIcon} from "@mui/material";
+import { useDispatch, useSelector } from 'react-redux';
+import {FormControl, MenuItem,  SvgIcon} from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Image from "next/image";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import testImage from "../../../public/capybara.jpg";
+import { toggleDarkMode } from "@/app/store/slices/darkmodeSlices";
 
 const TopBar = () => {
   const [username, setUsername] = useState("Name");
   const [Language, setLanguage] = React.useState("10");
+  const dispatch = useDispatch();
+  const darkMode = useSelector((state: any) => state.darkMode.darkMode);
+
+  const handleToggleDarkMode = () => {
+    dispatch(toggleDarkMode());
+  };
 
   const handleChange = (event: SelectChangeEvent) => {
     setLanguage(event.target.value as string);
   };
 
   return (
-    <div className="h-32 bg-[#F4F7FE]">
+    <div className="h-32 bg-[#F4F7FE] dark:bg-slate-600">
       <nav className="flex justify-between items-center h-full px-12">
         <div>
           <h1 className="text-4xl font-bold">Dashboard</h1>
@@ -38,8 +45,8 @@ const TopBar = () => {
             </Select>
           </FormControl>
 
-          <div className="mx-6">
-            <SvgIcon component={LightModeIcon} className="h-auto w-8 cursor-pointer" />
+          <div className="mx-6" onClick={handleToggleDarkMode}>
+            <SvgIcon component={darkMode ? LightModeIcon: DarkModeIcon} className="h-auto w-8 cursor-pointer" />
           </div>
           
           <div className="flex items-center">
