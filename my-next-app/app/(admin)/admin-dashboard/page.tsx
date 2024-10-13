@@ -137,7 +137,7 @@ const Page = () => {
                         />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="name" stroke="#666" />
+                    <XAxis dataKey="name" stroke="#666"/>
                     <YAxis stroke="#666" />
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <Tooltip content={<CustomTooltip />} />

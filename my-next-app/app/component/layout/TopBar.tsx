@@ -1,19 +1,19 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
-import {FormControl, MenuItem,  SvgIcon} from "@mui/material";
+import { FormControl, MenuItem, SvgIcon } from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Image from "next/image";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
+import MenuIcon from "@mui/icons-material/Menu"; // Nhập biểu tượng Menu từ MUI
 import testImage from "../../../public/capybara.jpg";
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
 
-const TopBar = () => {
-  //const [username, setUsername] = useState("Name");
+const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const [Language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
-  const darkMode = useSelector((state: {darkMode: {darkMode: boolean}}) => state.darkMode.darkMode);
+  const darkMode = useSelector((state: { darkMode: { darkMode: boolean } }) => state.darkMode.darkMode);
 
   const handleToggleDarkMode = () => {
     dispatch(toggleDarkMode());
@@ -26,7 +26,12 @@ const TopBar = () => {
   return (
     <div className="h-32 bg-admin-nav dark:bg-dark-sidebar dark:text-dark-text transition-colors duration-200">
       <nav className="flex justify-between items-center h-full px-12">
-        <div>
+        <div className="lg:hidden flex items-center">
+          {/* Biểu tượng Menu */}
+          <SvgIcon component={MenuIcon} className="cursor-pointer" onClick={onToggleSidebar} />
+        </div>
+        <div className="flex items-center">
+          {/* Chữ "Dashboard" */}
           <h1 className="text-4xl font-bold">Dashboard</h1>
         </div>
         <div className="flex items-center space-x-13">
@@ -45,9 +50,9 @@ const TopBar = () => {
           </FormControl>
 
           <div className="mx-6" onClick={handleToggleDarkMode}>
-            <SvgIcon component={darkMode ? LightModeIcon: DarkModeIcon} className="h-auto w-8 cursor-pointer" />
+            <SvgIcon component={darkMode ? LightModeIcon : DarkModeIcon} className="h-auto w-8 cursor-pointer" />
           </div>
-          
+
           <div className="flex items-center">
             <div className="w-10 h-10 relative rounded-full overflow-hidden flex-shrink-0">
               <Image
