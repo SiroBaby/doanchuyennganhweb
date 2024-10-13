@@ -48,8 +48,7 @@ export default function RootLayout({
   if (!isMounted) return null; // Trả về null nếu chưa mount
 
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <div className={`${geistSans.variable} ${geistMono.variable}`}>
         <Providers>
           <div className="flex">
             {/* Sidebar cho màn hình lớn */}
@@ -67,7 +66,6 @@ export default function RootLayout({
             </div>
           </div>
         </Providers>
-      </body>
-    </html>
+      </div>
   );
 }

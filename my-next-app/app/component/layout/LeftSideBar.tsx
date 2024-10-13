@@ -46,7 +46,7 @@ const LeftSideBar = ({ onItemClick, onClose }: { onItemClick: (path: string) => 
                 ? "border-custom-red bg-selected-corlor dark:bg-dark-selected"
                 : "border-transparent"
             }`}
-            onClick={() => handleItemClick("dashboard", "/admin-dashboard")}
+            onClick={() => handleItemClick("dashboard", "/admin/admin-dashboard")}
           >
             <SvgIcon component={DashboardIcon} className="h-auto w-8 text-custom-red" />
             <span className="ml-2 text-2xl font-bold">Dashboard</span>
@@ -58,7 +58,7 @@ const LeftSideBar = ({ onItemClick, onClose }: { onItemClick: (path: string) => 
                 ? "border-custom-red bg-selected-corlor dark:bg-dark-selected"
                 : "border-transparent"
             }`}
-            onClick={() => handleItemClick("tour", "/tour")}
+            onClick={() => handleItemClick("tour", "/admin/tour")}
           >
             <SvgIcon component={TourIcon} className="h-auto w-8 text-custom-red" />
             <span className="ml-2 text-2xl font-bold">Tour</span>

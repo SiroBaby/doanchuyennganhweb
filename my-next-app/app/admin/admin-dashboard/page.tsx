@@ -52,8 +52,8 @@ const Page = () => {
         <div className="flex-1 overflow-auto p-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
-              <CardContent className="flex justify-between items-center">
+            <Card className="!bg-gradient-to-r !from-red-500 !to-red-600 !text-white !transition-all !duration-300 !hover:shadow-xl hover:scale-105">
+              <CardContent className="!flex justify-between items-center">
                 <div>
                   <Typography variant="h6" className="font-bold mb-2">
                     Total Earning Today
@@ -65,13 +65,13 @@ const Page = () => {
                 <div>
                   <SvgIcon
                     component={MonetizationOnIcon}
-                    className="h-auto w-20"
+                    className="!h-auto !w-16"
                   />
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
-              <CardContent className="flex justify-between items-center">
+            <Card className="!bg-gradient-to-r !from-blue-500 !to-blue-600 !text-white !shadow-lg !transition-all !duration-300 !hover:shadow-xl hover:scale-105">
+              <CardContent className="!flex justify-between items-center">
                 <div>
                   <Typography variant="h6" className="font-bold mb-2">
                     Total Orders
@@ -81,11 +81,11 @@ const Page = () => {
                   </Typography>
                 </div>
                 <div>
-                  <SvgIcon component={ShoppingCartIcon} className="h-auto w-20"/>
+                  <SvgIcon component={ShoppingCartIcon} className="!h-auto !w-16" />
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105">
+            <Card className="!bg-gradient-to-r !from-green-500 !to-green-600 !text-white !shadow-lg !transition-all !duration-300 !hover:shadow-xl hover:scale-105">
               <CardContent className="flex justify-between items-center">
                 <div>
                   <Typography variant="h6" className="font-bold mb-2">
@@ -96,7 +96,7 @@ const Page = () => {
                   </Typography>
                 </div>
                 <div>
-                  <SvgIcon component={TourIcon} className="h-auto w-20"/>
+                  <SvgIcon component={TourIcon} className="!h-auto !w-16" />
                 </div>
               </CardContent>
             </Card>
@@ -137,7 +137,7 @@ const Page = () => {
                         />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="name" stroke="#666"/>
+                    <XAxis dataKey="name" stroke="#666" />
                     <YAxis stroke="#666" />
                     <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
                     <Tooltip content={<CustomTooltip />} />
@@ -146,7 +146,7 @@ const Page = () => {
                       dataKey="income"
                       stroke="#8884d8"
                       fillOpacity={1}
-                      fill="url(#colorIncome)" 
+                      fill="url(#colorIncome)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
