@@ -24,7 +24,7 @@ const TopBar = () => {
   };
 
   return (
-    <div className="h-32 bg-[#F4F7FE] dark:bg-dark-sidebar dark:text-dark-text transition-colors duration-200">
+    <div className="h-32 bg-admin-nav dark:bg-dark-sidebar dark:text-dark-text transition-colors duration-200">
       <nav className="flex justify-between items-center h-full px-12">
         <div>
           <h1 className="text-4xl font-bold">Dashboard</h1>

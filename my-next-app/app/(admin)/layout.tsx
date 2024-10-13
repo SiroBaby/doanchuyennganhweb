@@ -29,10 +29,16 @@ export default function AdminLayout({
   return (
     <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       <Providers>
-        <div className="hidden lg:flex">
-          <LeftSideBar />
+        {/* Với màn hình nhỏ hơn lg, chỉ hiển thị TopBar và Body */}
+        <div className="flex flex-col lg:flex-row">
+          {/* Hiển thị LeftSideBar khi màn hình lg trở lên */}
+          <div className="hidden lg:flex">
+            <LeftSideBar />
+          </div>
+          {/* Phần TopBar luôn hiển thị */}
           <div className="flex-1 flex flex-col">
             <TopBar />
+            {/* Nội dung body */}
             <div className="flex-1">{children}</div>
           </div>
         </div>
