@@ -1,7 +1,7 @@
 
 const page = () => {
   return (
-    <div>đây là trang php lam</div>
+    <div>đây là trang sign-in cua php</div>
   )
 }
 
