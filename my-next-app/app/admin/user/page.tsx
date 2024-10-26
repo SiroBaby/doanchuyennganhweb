@@ -19,13 +19,13 @@ import Image from 'next/image';
 const UserPage = () => {
   // Sample user data
   const users = [
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', image: '/api/placeholder/100/100' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
+    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
   ];
 
   return (
@@ -47,10 +47,10 @@ const UserPage = () => {
                         UserID
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        Image
+                        UserName
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        UserName
+                        Password
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
                         UserEmail
@@ -69,18 +69,11 @@ const UserPage = () => {
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           {user.id}
                         </TableCell>
-                        <TableCell>
-                          <div className="relative w-16 h-16 !text-xl">
-                            <Image
-                              src={user.image}
-                              alt={user.name}
-                              fill
-                              className="object-cover rounded-lg"
-                            />
-                          </div>
-                        </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           {user.name}
+                        </TableCell>
+                        <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
+                          {user.pass}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           {user.email}

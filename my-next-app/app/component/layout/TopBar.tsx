@@ -32,7 +32,7 @@ const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
         </div>
         <div className="flex items-center">
           {/* Chữ "Dashboard" */}
-          <h1 className="text-4xl font-bold">Dashboard</h1>
+          <h1 className="text-4xl font-bold">Admin</h1>
         </div>
         <div className="flex items-center space-x-13">
           <FormControl variant="standard" sx={{ m: 1, minWidth: 10 }}>
