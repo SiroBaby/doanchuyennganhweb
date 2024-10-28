@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -11,63 +11,108 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Box,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { SelectChangeEvent } from '@mui/material/Select';
 
-type Vehicle = {
-    code: string;
-    type: string;
-    maxCapacity: number;
-    availableSeats: number;
-    status: 'ready' | 'busy';
-};
+interface Location {
+  location_id: number;
+  location_name: string;
+  country: string;
+  city: string;
+}
 
-type Schedule = {
-    startDate: string;
-    endDate: string;
-    basePrice: string;
-    status: string;
-    vehicle: string;
-};
+interface TourType {
+  type_id: number;
+  type_name: string;
+  description: string;
+}
 
-const defaultVehicles = [
-  { code: 'VN123', type: 'Xe khách', status: 'ready' },
-  { code: 'VN124', type: 'Xe giường nằm', status: 'ready' },
-];
+interface Vehicle {
+  vehicle_id: number;
+  vehicle_code: string;
+  vehicle_type: string;
+  max_capacity: number;
+  current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED';
+}
 
-const defaultLocations = [
-  { id: 1, name: 'Hà Nội' },
-  { id: 2, name: 'Đà Nẵng' },
-];
+interface Schedule {
+  start_date: string;
+  end_date: string;
+  base_price: string;
+  available_slots: string;
+  status: 'ACTIVE' | 'CANCELLED' | 'COMPLETED' | 'FULL';
+  vehicle_id: number;
+}
 
 const AddTourPage = () => {
   const router = useRouter();
 
   const [tourName, setTourName] = useState('');
-  const [duration, setDuration] = useState<number | ''>('');
-  const [schedules, setSchedules] = useState([
-    { startDate: '', endDate: '', basePrice: '', status: '', vehicle: '' },
-  ]);
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [description, setDescription] = useState('');
+  const [duration, setDuration] = useState('');
+  const [priceRange, setPriceRange] = useState('');
+  const [maxParticipants, setMaxParticipants] = useState<number | ''>('');
+  const [locationId, setLocationId] = useState<number | ''>('');
+  const [tourTypeId, setTourTypeId] = useState<number | ''>('');
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+
+  // State for dropdown options
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [tourTypes, setTourTypes] = useState<TourType[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+
+  // Fetch dropdown options
+  useEffect(() => {
+    // Replace these with actual API calls
+    const fetchLocations = async () => {
+      // const response = await fetch('/api/locations');
+      // const data = await response.json();
+      // setLocations(data);
+      setLocations([
+        { location_id: 1, location_name: 'Hà Nội', country: 'Việt Nam', city: 'Hà Nội' },
+        { location_id: 2, location_name: 'Đà Nẵng', country: 'Việt Nam', city: 'Đà Nẵng' },
+      ]);
+    };
+
+    const fetchTourTypes = async () => {
+      // const response = await fetch('/api/tour-types');
+      // const data = await response.json();
+      // setTourTypes(data);
+      setTourTypes([
+        { type_id: 1, type_name: 'Văn hóa', description: 'Tour văn hóa' },
+        { type_id: 2, type_name: 'Ẩm thực', description: 'Tour ẩm thực' },
+      ]);
+    };
+
+    const fetchVehicles = async () => {
+      // const response = await fetch('/api/vehicles');
+      // const data = await response.json();
+      // setVehicles(data);
+      setVehicles([
+        { vehicle_id: 1, vehicle_code: 'VN123', vehicle_type: 'Xe khách', max_capacity: 45, current_status: 'AVAILABLE' },
+        { vehicle_id: 2, vehicle_code: 'VN124', vehicle_type: 'Xe giường nằm', max_capacity: 30, current_status: 'AVAILABLE' },
+      ]);
+    };
+
+    fetchLocations();
+    fetchTourTypes();
+    fetchVehicles();
+  }, []);
 
   const handleScheduleChange = (index: number, field: keyof Schedule, value: string) => {
     const newSchedules = [...schedules];
-    newSchedules[index][field] = value;
+    newSchedules[index] = { ...newSchedules[index], [field]: value };
     setSchedules(newSchedules);
   };
 
   const addSchedule = () => {
     setSchedules([
       ...schedules,
-      { startDate: '', endDate: '', basePrice: '', status: '', vehicle: '' },
+      { start_date: '', end_date: '', base_price: '', available_slots: '', status: 'ACTIVE', vehicle_id: 0 },
     ]);
-  };
-
-  const handleLocationChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value as string[];
-    setSelectedLocations(value);
   };
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,52 +129,45 @@ const AddTourPage = () => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!duration) {
-      alert('Vui lòng chọn số ngày cho tour');
-      return;
-    }
+    const tourData = {
+      tour_name: tourName,
+      description,
+      duration,
+      price_range: priceRange,
+      max_participants: maxParticipants,
+      location_id: locationId,
+      tour_type_id: tourTypeId,
+      schedules,
+    };
 
-    for (const schedule of schedules) {
-      const startDate = new Date(schedule.startDate);
-      const endDate = new Date(schedule.endDate);
-      const scheduleDays = Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24) + 1
-      );
+    // Here you would typically send the data to your API
+    console.log(tourData);
 
-      if (scheduleDays !== duration) {
-        alert(
-          `Lịch trình ${schedule.startDate} - ${schedule.endDate} không hợp lệ. Tour yêu cầu ${duration} ngày.`
-        );
-        return;
-      }
-    }
+    // Uncomment and replace with your API endpoint
+    // try {
+    //   const response = await fetch('/api/tours', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify(tourData),
+    //   });
+    //   if (response.ok) {
+    //     router.push('/admin/tours');
+    //   } else {
+    //     throw new Error('Failed to create tour');
+    //   }
+    // } catch (error) {
+    //   console.error('Error creating tour:', error);
+    // }
 
-    const formData = new FormData();
-    formData.append('tour_name', tourName);
-    formData.append('duration', duration.toString());
-    selectedLocations.forEach((location) => formData.append('locations[]', location));
-    imageFiles.forEach((file) => formData.append('images', file));
-
-    schedules.forEach((schedule, index) => {
-      formData.append(`schedules[${index}][startDate]`, schedule.startDate);
-      formData.append(`schedules[${index}][endDate]`, schedule.endDate);
-      formData.append(`schedules[${index}][basePrice]`, schedule.basePrice);
-      formData.append(`schedules[${index}][status]`, schedule.status);
-      formData.append(`schedules[${index}][vehicle]`, schedule.vehicle);
-    });
-
-    // Uncomment and replace with your endpoint
-    // const response = await fetch('/api/tours', {
-    //   method: 'POST',
-    //   body: formData,
-    // });
-
+    // For now, just redirect
     router.push('/admin/tours');
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100 dark:bg-dark-body">
-      <Card className="!bg-white dark:!bg-dark-sidebar shadow-lg w-full max-w-2xl">
+    <div className="h-screen overflow-auto py-6 bg-gray-100 dark:bg-dark-body">
+      <Card className="!bg-white dark:!bg-dark-sidebar shadow-lg w-full max-w-4xl mx-auto">
         <CardContent>
           <Typography variant="h5" className="mb-4 text-center">
             Thêm Tour Mới
@@ -142,130 +180,164 @@ const AddTourPage = () => {
               onChange={(e) => setTourName(e.target.value)}
               required
             />
-            <FormControl variant="outlined" required>
-              <InputLabel>Thời gian (ngày)</InputLabel>
-              <Select
-                value={duration.toString()}
-                onChange={(e) => setDuration(parseInt(e.target.value))}
-                label="Thời gian (ngày)"
-              >
-                {Array.from(Array(15).keys()).map((day) => (
-                  <MenuItem key={day + 1} value={day + 1}>
-                    {day + 1} ngày
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
+            <TextField
+              label="Mô tả"
+              variant="outlined"
+              multiline
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+            <TextField
+              label="Thời gian (ngày)"
+              variant="outlined"
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              required
+            />
+            <TextField
+              label="Khoảng giá"
+              variant="outlined"
+              value={priceRange}
+              onChange={(e) => setPriceRange(e.target.value)}
+              required
+            />
+            <TextField
+              label="Số người tối đa"
+              variant="outlined"
+              type="number"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(parseInt(e.target.value))}
+              required
+            />
             <FormControl variant="outlined" required>
               <InputLabel>Địa điểm</InputLabel>
               <Select
-                multiple
-                value={selectedLocations}
-                onChange={handleLocationChange}
+                value={locationId}
+                onChange={(e: SelectChangeEvent<number>) => setLocationId(e.target.value as number)}
                 label="Địa điểm"
               >
-                {defaultLocations.map((location) => (
-                  <MenuItem key={location.id} value={location.name}>
-                    {location.name}
+                {locations.map((location) => (
+                  <MenuItem key={location.location_id} value={location.location_id}>
+                    {location.location_name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl variant="outlined" required>
+              <InputLabel>Loại Tour</InputLabel>
+              <Select
+                value={tourTypeId}
+                onChange={(e: SelectChangeEvent<number>) => setTourTypeId(e.target.value as number)}
+                label="Loại Tour"
+              >
+                {tourTypes.map((type) => (
+                  <MenuItem key={type.type_id} value={type.type_id}>
+                    {type.type_name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageChange}
-              required
-            />
-            <Typography variant="body2" className="text-gray-600">
-              Chọn hình ảnh (có thể chọn nhiều hình)
-            </Typography>
-
-            <div className="flex flex-wrap">
-              {imageFiles.map((file, index) => (
-                <Paper key={index} className="flex items-center justify-between p-2 m-1">
-                  <Typography variant="body2">{file.name}</Typography>
-                  <Button onClick={() => handleRemoveImage(index)} color="secondary">
-                    Xóa
-                  </Button>
-                </Paper>
-              ))}
-            </div>
-
+            <Typography variant="h6" className="mt-4">Lịch Trình</Typography>
             {schedules.map((schedule, index) => (
               <Paper key={index} className="p-4 mb-2">
-                <Typography variant="h6" className="mb-2">Lịch Trình {index + 1}</Typography>
-                <TextField
-                  label="Ngày Bắt Đầu"
-                  type="date"
-                  variant="outlined"
-                  value={schedule.startDate}
-                  onChange={(e) => handleScheduleChange(index, 'startDate', e.target.value)}
-                  required
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-                <TextField
-                  label="Ngày Kết Thúc"
-                  type="date"
-                  variant="outlined"
-                  value={schedule.endDate}
-                  onChange={(e) => handleScheduleChange(index, 'endDate', e.target.value)}
-                  required
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-                <TextField
-                  label="Giá Cơ Bản"
-                  variant="outlined"
-                  value={schedule.basePrice}
-                  onChange={(e) => handleScheduleChange(index, 'basePrice', e.target.value)}
-                  required
-                />
-                <FormControl variant="outlined" required>
-                  <InputLabel>Trạng Thái</InputLabel>
-                  <Select
-                    value={schedule.status}
-                    onChange={(e) => handleScheduleChange(index, 'status', e.target.value)}
-                    label="Trạng Thái"
-                  >
-                    <MenuItem value="Sẵn sàng">Sẵn sàng</MenuItem>
-                    <MenuItem value="Đã hết chỗ">Đã hết chỗ</MenuItem>
-                  </Select>
-                </FormControl>
-                <FormControl variant="outlined" required>
-                  <InputLabel>Xe</InputLabel>
-                  <Select
-                    value={schedule.vehicle}
-                    onChange={(e) => handleScheduleChange(index, 'vehicle', e.target.value)}
-                    label="Xe"
-                  >
-                    {defaultVehicles
-                      .filter(vehicle => vehicle.status === 'ready')
-                      .map((vehicle) => (
-                        <MenuItem key={vehicle.code} value={vehicle.code}>
-                          {vehicle.type} - {vehicle.code}
+                <Typography variant="subtitle1" className="mb-2">Lịch Trình {index + 1}</Typography>
+                <Box className="flex flex-wrap gap-4">
+                  <TextField
+                    label="Ngày Bắt Đầu"
+                    type="date"
+                    value={schedule.start_date}
+                    onChange={(e) => handleScheduleChange(index, 'start_date', e.target.value)}
+                    required
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label="Ngày Kết Thúc"
+                    type="date"
+                    value={schedule.end_date}
+                    onChange={(e) => handleScheduleChange(index, 'end_date', e.target.value)}
+                    required
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    label="Giá Cơ Bản"
+                    type="number"
+                    value={schedule.base_price}
+                    onChange={(e) => handleScheduleChange(index, 'base_price', e.target.value)}
+                    required
+                  />
+                  <TextField
+                    label="Số Chỗ"
+                    type="number"
+                    value={schedule.available_slots}
+                    onChange={(e) => handleScheduleChange(index, 'available_slots', e.target.value)}
+                    required
+                  />
+                  <FormControl variant="outlined" required>
+                    <InputLabel>Trạng Thái</InputLabel>
+                    <Select
+                      value={schedule.status}
+                      onChange={(e) => handleScheduleChange(index, 'status', e.target.value as Schedule['status'])}
+                      label="Trạng Thái"
+                    >
+                      <MenuItem value="ACTIVE">Hoạt động</MenuItem>
+                      <MenuItem value="CANCELLED">Đã hủy</MenuItem>
+                      <MenuItem value="COMPLETED">Đã hoàn thành</MenuItem>
+                      <MenuItem value="FULL">Đã đầy</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <FormControl variant="outlined" required>
+                    <InputLabel>Phương Tiện</InputLabel>
+                    <Select
+                      value={schedule.vehicle_id}
+                      onChange={(e) => handleScheduleChange(index, 'vehicle_id', e.target.value as unknown as string)}
+                      label="Phương Tiện"
+                    >
+                      {vehicles.map((vehicle) => (
+                        <MenuItem key={vehicle.vehicle_id} value={vehicle.vehicle_id}>
+                          {vehicle.vehicle_type} - {vehicle.vehicle_code}
                         </MenuItem>
                       ))}
-                  </Select>
-                </FormControl>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Paper>
             ))}
 
             <Button variant="outlined" onClick={addSchedule}>
               Thêm Lịch Trình
             </Button>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageChange}
+              className="mt-4"
+            />
+            <Typography variant="body2" className="text-gray-600">
+              Chọn hình ảnh (có thể chọn nhiều hình)
+            </Typography>
+
+            <div className="flex flex-wrap gap-2 mt-2">
+              {imageFiles.map((file, index) => (
+                <Paper key={index} className="p-2 flex items-center">
+                  <Typography variant="body2" className="mr-2">{file.name}</Typography>
+                  <Button size="small" onClick={() => handleRemoveImage(index)} color="secondary">
+                    Xóa
+                  </Button>
+                </Paper>
+              ))}
+            </div>
             
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              className="self-center"
+              className="self-center mt-6"
             >
               Lưu Tour
             </Button>
