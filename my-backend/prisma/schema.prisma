@@ -1,21 +1,223 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
-  relationMode = "prisma"
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+model UserRole {
+  role_id    Int    @id @default(autoincrement())
+  role_name  String @unique
+  description String?
+  Users      User[]
+}
+
+model Location {
+  location_id   Int      @id @default(autoincrement())
+  location_name String
+  country       String
+  city          String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  Tours         Tour[]
+}
+
+model TourType {
+  type_id    Int     @id @default(autoincrement())
+  type_name  String  @unique
+  description String?
+  Tours      Tour[]
+}
+
+model Tour {
+  tour_id         Int          @id @default(autoincrement())
+  tour_name       String
+  description     String?
+  duration        String?
+  price_range     String?
+  max_participants Int
+  location_id     Int
+  tour_type_id    Int
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  deleted_at      DateTime?
+  Location        Location     @relation(fields: [location_id], references: [location_id])
+  TourType        TourType     @relation(fields: [tour_type_id], references: [type_id])
+  TourSchedules   TourSchedule[]
+  TourImages      TourImage[]
+  Reviews         Review[]
+}
+
+model TourSchedule {
+  schedule_id      Int        @id @default(autoincrement())
+  tour_id          Int
+  start_date       DateTime
+  end_date         DateTime
+  base_price       Decimal
+  available_slots  Int
+  status           String     @default("ACTIVE")
+  created_at       DateTime   @default(now())
+  updated_at       DateTime   @updatedAt
+  Tour             Tour       @relation(fields: [tour_id], references: [tour_id])
+  VehicleAssignments VehicleAssignment[]
+  Bookings         Booking[]
+}
+
+model Vehicle {
+  vehicle_id      Int        @id @default(autoincrement())
+  vehicle_code    String     @unique
+  vehicle_type    String
+  max_capacity    Int
+  current_status  String     @default("AVAILABLE")
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  VehicleAssignments VehicleAssignment[]
+  VehicleAvailability VehicleAvailability[]
+}
+
+model VehicleAssignment {
+  assignment_id      Int         @id @default(autoincrement())
+  schedule_id        Int
+  vehicle_id         Int
+  available_seats    Int
+  price_adjustment   Decimal @default(0)
+  created_at         DateTime    @default(now())
+  updated_at         DateTime    @updatedAt
+  TourSchedule       TourSchedule @relation(fields: [schedule_id], references: [schedule_id])
+  Vehicle            Vehicle      @relation(fields: [vehicle_id], references: [vehicle_id])
+  Bookings           Booking[]
+}
+
+model VehicleAvailability {
+  availability_id   Int       @id @default(autoincrement())
+  vehicle_id        Int
+  date              DateTime
+  status            String
+  created_at        DateTime   @default(now())
+  Vehicle           Vehicle    @relation(fields: [vehicle_id], references: [vehicle_id])
+}
+
+model TourImage {
+  image_id       Int       @id @default(autoincrement())
+  tour_id        Int
+  image_url      String
+  created_at     DateTime  @default(now())
+  Tour           Tour      @relation(fields: [tour_id], references: [tour_id])
+}
+
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
+  user_id        Int       @id @default(autoincrement())
+  full_name      String
+  email          String    @unique
+  password       String
+  phone_number   String?
+  address        String?
+  role_id        Int?
+  status         String    @default("ACTIVE")
+  password_salt  String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  deleted_at     DateTime?
+  UserRole       UserRole? @relation(fields: [role_id], references: [role_id])
+  Bookings       Booking[]
+  Reviews        Review[]
+  LoginHistories LoginHistory[]
+  Notifications  Notification[]
+  Invoices       Invoice[]
+}
+
+model Discount {
+  discount_id   Int       @id @default(autoincrement())
+  discount_code String    @unique
+  discount_value Decimal
+  start_date     DateTime
+  end_date       DateTime
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  Bookings       Booking[] // Added opposite relation field
+}
+
+model Booking {
+  booking_id      Int       @id @default(autoincrement())
+  user_id         Int
+  schedule_id     Int
+  assignment_id   Int
+  booking_date    DateTime
+  number_of_people Int
+  total_price     Decimal
+  special_requests String?
+  discount_id     Int?
+  payment_status  String    @default("PENDING")
+  booking_status  String    @default("PENDING")
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  User            User      @relation(fields: [user_id], references: [user_id])
+  TourSchedule    TourSchedule @relation(fields: [schedule_id], references: [schedule_id])
+  VehicleAssignment VehicleAssignment @relation(fields: [assignment_id], references: [assignment_id])
+  Discount        Discount?  @relation(fields: [discount_id], references: [discount_id])
+  Payments        Payment[] // Added opposite relation field
+  Invoices        Invoice[] // Added opposite relation field
+}
+
+model PaymentMethod {
+  payment_method_id Int      @id @default(autoincrement())
+  method_name       String
+  created_at        DateTime @default(now())
+  Payments          Payment[]
+}
+
+model Payment {
+  payment_id       Int      @id @default(autoincrement())
+  booking_id       Int
+  payment_method_id Int
+  amount           Decimal
+  payment_date     DateTime
+  created_at       DateTime @default(now())
+  Booking          Booking  @relation(fields: [booking_id], references: [booking_id])
+  PaymentMethod    PaymentMethod @relation(fields: [payment_method_id], references: [payment_method_id])
+}
+
+model Review {
+  review_id    Int       @id @default(autoincrement())
+  tour_id      Int
+  user_id      Int
+  rating       Int
+  comment      String?
+  review_date  DateTime
+  created_at   DateTime  @default(now())
+  Tour         Tour      @relation(fields: [tour_id], references: [tour_id])
+  User         User      @relation(fields: [user_id], references: [user_id])
+}
+
+model LoginHistory {
+  history_id   Int       @id @default(autoincrement())
+  user_id      Int
+  login_time   DateTime
+  ip_address   String?
+  created_at   DateTime  @default(now())
+  User         User      @relation(fields: [user_id], references: [user_id])
+}
+
+model Notification {
+  notification_id Int      @id @default(autoincrement())
+  user_id         Int
+  message         String
+  is_read         Boolean  @default(false)
+  created_at      DateTime @default(now())
+  User            User     @relation(fields: [user_id], references: [user_id])
+}
+
+model Invoice {
+  invoice_id    Int       @id @default(autoincrement())
+  booking_id    Int
+  user_id       Int
+  amount        Decimal
+  date          DateTime
+  payment_status String   @default("PENDING")
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  Booking       Booking   @relation(fields: [booking_id], references: [booking_id])
+  User          User      @relation(fields: [user_id], references: [user_id])
 }

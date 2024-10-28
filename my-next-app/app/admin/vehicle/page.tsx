@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -13,11 +13,14 @@ import {
   Paper,
   Button,
   Chip,
-  IconButton
+  IconButton,
+  CircularProgress // Import CircularProgress for loading state
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { useGetVehiclesQuery } from '@/app/store/api/vehicleapi';
 
 interface Vehicle {
   vehicle_id: number;
@@ -29,34 +32,21 @@ interface Vehicle {
 
 const VehiclesPage = () => {
   const router = useRouter();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      // Thay thế bằng API call thực tế
-      // const response = await fetch('/api/vehicles');
-      // const data = await response.json();
-      // setVehicles(data);
-
-      // Dữ liệu mẫu
-      setVehicles([
-        { vehicle_id: 1, vehicle_code: 'VN123', vehicle_type: 'Xe khách', max_capacity: 45, current_status: 'AVAILABLE' },
-        { vehicle_id: 2, vehicle_code: 'VN124', vehicle_type: 'Xe giường nằm', max_capacity: 30, current_status: 'IN_USE' },
-      ]);
-    };
-
-    fetchVehicles();
-  }, []);
-
+  const { data: vehicles = [], error, isLoading } = useGetVehiclesQuery();
+  
   const handleEdit = (id: number) => {
-    router.push(`/admin/vehicles/edit/${id}`);
+    router.push(`/admin/vehicle/edit/${id}`);
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này?')) {
-      // Thay thế bằng API call thực tế
-      // await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-      setVehicles(vehicles.filter(vehicle => vehicle.vehicle_id !== id));
+      try {
+        // Uncomment and implement the actual API call
+        // await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+        alert('Phương tiện đã được xóa thành công!'); // For feedback
+      } catch (error) {
+        alert('Có lỗi xảy ra khi xóa phương tiện.'); // For error feedback
+      }
     }
   };
 
@@ -74,6 +64,24 @@ const VehiclesPage = () => {
         return 'default';
     }
   };
+
+  if (isLoading) return <CircularProgress />; // Show loading spinner
+  if (error) {
+    const errorMessage = 'Có lỗi xảy ra khi tải dữ liệu.';
+    if ('status' in error) {
+      const fetchError = error as FetchBaseQueryError;
+      return (
+        <Typography color="error">
+          {errorMessage} Mã lỗi: {fetchError.status}
+        </Typography>
+      );
+    }
+    return (
+      <Typography color="error">
+        {errorMessage} Chi tiết: {error.message || 'Không có thông tin chi tiết.'}
+      </Typography>
+    );
+  }
 
   return (
     <div className="p-6 bg-gray-100 dark:bg-dark-body min-h-screen">
@@ -93,7 +101,7 @@ const VehiclesPage = () => {
           <TableContainer component={Paper} className='bg-gray-100 dark:bg-dark-body'>
             <Table>
               <TableHead>
-                <TableRow >
+                <TableRow>
                   <TableCell className='dark:!text-dark-text'>Mã Phương tiện</TableCell>
                   <TableCell className='dark:!text-dark-text'>Loại</TableCell>
                   <TableCell className='dark:!text-dark-text'>Sức chứa tối đa</TableCell>
@@ -103,7 +111,7 @@ const VehiclesPage = () => {
               </TableHead>
               <TableBody>
                 {vehicles.map((vehicle) => (
-                  <TableRow key={vehicle.vehicle_id}>
+                  <TableRow key={vehicle.vehicle_code}>
                     <TableCell className='dark:!text-dark-text'>{vehicle.vehicle_code}</TableCell>
                     <TableCell className='dark:!text-dark-text'>{vehicle.vehicle_type}</TableCell>
                     <TableCell className='dark:!text-dark-text'>{vehicle.max_capacity}</TableCell>
@@ -114,20 +122,22 @@ const VehiclesPage = () => {
                       />
                     </TableCell>
                     <TableCell>
-                    <div className="flex space-x-2">
-                            <IconButton 
-                              className="!text-blue-500 hover:!bg-blue-50 dark:hover:!bg-blue-900"
-                              size="small"
-                            >
-                              <EditIcon className="!w-7 !h-6" />
-                            </IconButton>
-                            <IconButton 
-                              className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900"
-                              size="small"
-                            >
-                              <DeleteIcon className="!w-7 !h-6" />
-                            </IconButton>
-                          </div>
+                      <div className="flex space-x-2">
+                        <IconButton 
+                          className="!text-blue-500 hover:!bg-blue-50 dark:hover:!bg-blue-900"
+                          size="small"
+                          // onClick={() => handleEdit(vehicle.vehicle_id)} // Pass the vehicle ID
+                        >
+                          <EditIcon className="!w-7 !h-6" />
+                        </IconButton>
+                        <IconButton 
+                          className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900"
+                          size="small"
+                          // onClick={() => handleDelete(vehicle.vehicle_id)} // Call handleDelete with vehicle ID
+                        >
+                          <DeleteIcon className="!w-7 !h-6" />
+                        </IconButton>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

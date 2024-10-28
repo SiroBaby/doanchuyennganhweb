@@ -7,7 +7,6 @@ export const usersApi = createApi({
   endpoints: (builder) => ({
     getUsers: builder.query<{ id: number; name: string; email: string }[], void>({
       query: () => 'getUsers',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transformResponse: (response: { result: { data: any[] } }) => response.result.data,
       providesTags: (result) =>
         result ? 

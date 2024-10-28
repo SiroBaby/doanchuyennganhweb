@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { useAddVehicleMutation } from '@/app/store/api/vehicleapi';
 
 interface VehicleData {
   vehicle_code: string;
@@ -23,6 +24,7 @@ interface VehicleData {
 
 const AddVehiclePage = () => {
   const router = useRouter();
+  const [addVehicle] = useAddVehicleMutation();
   const [vehicleData, setVehicleData] = useState<VehicleData>({
     vehicle_code: '',
     vehicle_type: '',
@@ -34,27 +36,25 @@ const AddVehiclePage = () => {
     const { name, value } = e.target;
     setVehicleData(prevData => ({
       ...prevData,
-      [name]: value,
+      [name]: name === 'max_capacity' ? Number(value) : value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Thay thế bằng API call thực tế
-    // const response = await fetch('/api/vehicles', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(vehicleData),
-    // });
-    // if (response.ok) {
-    //   router.push('/admin/vehicles');
-    // } else {
-    //   // Xử lý lỗi
-    // }
-    console.log(vehicleData);
-    router.push('/admin/vehicles');
+    try {
+      await addVehicle({
+
+        vehicle_code: vehicleData.vehicle_code,
+        vehicle_type: vehicleData.vehicle_type,
+        max_capacity: vehicleData.max_capacity,
+        current_status: vehicleData.current_status,
+      }).unwrap(); 
+      router.push('/admin/vehicle');
+    } catch (error) {
+      console.error("Error adding vehicle:", error);
+      // Xử lý lỗi hiển thị cho người dùng nếu cần
+    }
   };
 
   return (
