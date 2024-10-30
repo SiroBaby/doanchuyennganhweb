@@ -7,7 +7,7 @@ const RegisterForm: React.FC = () => {
         {/* Phần bên trái chứa ảnh và text */}
         <div className="flex flex-col items-center pr-10">
           <img
-            src="your-image-url.jpg"
+            src="/my-next-app/public/reg-pic.jpeg"
             alt="Travel"
             className="rounded-xl w-80"
           />
