@@ -97,7 +97,7 @@ const LeftSideBar = ({ onItemClick, onClose }: { onItemClick: (path: string) => 
                 ? "border-custom-red bg-selected-corlor dark:bg-dark-selected"
                 : "border-transparent"
             }`}
-            onClick={() => handleItemClick("tour", "/admin/vehicle")}
+            onClick={() => handleItemClick("vehicle", "/admin/vehicle")}
           >
             <SvgIcon component={DirectionsBusIcon} className="h-auto w-8 text-custom-red" />
             <span className="ml-2 text-2xl font-bold">Vehicle</span>
