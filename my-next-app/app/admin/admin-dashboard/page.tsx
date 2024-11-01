@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
-import { Card, CardContent, Typography, AppBar, Toolbar, IconButton, Avatar } from "@mui/material";
-import { Menu as MenuIcon, Notifications, Dashboard, Tour, People, ShoppingCart } from "@mui/icons-material";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
+import { Card, CardContent, Typography} from "@mui/material";
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
 import { TooltipProps } from "recharts";
 import { SvgIcon } from "@mui/material";
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
@@ -28,7 +27,7 @@ const tourTypes = [
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps<any, any>) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-4 rounded shadow-lg border border-gray-200">
@@ -171,7 +170,7 @@ const Page = () => {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {tourTypes.map((entry: any, index: number) => (
+                      {tourTypes.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -199,7 +198,7 @@ const Page = () => {
                   <YAxis stroke="#666" />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="tours" fill="#82ca9d">
-                    {monthlyData.map((entry: any, index: number) => (
+                    {monthlyData.map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}

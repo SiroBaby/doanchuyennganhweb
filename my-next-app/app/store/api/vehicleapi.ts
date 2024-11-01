@@ -12,7 +12,7 @@ interface Vehicle {
 // Tạo API cho phương tiện
 export const vehiclesApi = createApi({
   reducerPath: 'vehiclesApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }), // Cập nhật địa chỉ base URL
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://doanchuyennganhweb.onrender.com/trpc' }), // Cập nhật địa chỉ base URL
   tagTypes: ['Vehicle'], // Định nghĩa loại tag cho việc invalidate cache
   endpoints: (builder) => ({
     getVehicleById: builder.query<Vehicle, number>({

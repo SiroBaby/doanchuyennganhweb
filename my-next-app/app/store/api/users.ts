@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const usersApi = createApi({
   reducerPath: 'usersApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://doanchuyennganhweb.onrender.com/trpc' }),
   tagTypes: ['User'], // Định nghĩa loại tag ở đây
   endpoints: (builder) => ({
     getUsers: builder.query<{ id: number; name: string; email: string }[], void>({
