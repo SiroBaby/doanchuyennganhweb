@@ -10,7 +10,6 @@ import {
     ListItem,
     ListItemText,
     Divider,
-    Modal
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -79,17 +78,12 @@ const TourDetailPage = () => {
     };
 
     const [currentImage, setCurrentImage] = useState(0);
-    const [openCalendar, setOpenCalendar] = useState(false);
     const handleNextImage = () => {
         setCurrentImage((prev) => (prev + 1) % tour.images.length);
     };
 
     const handlePreviousImage = () => {
         setCurrentImage((prev) => (prev - 1 + tour.images.length) % tour.images.length);
-    };
-
-    const toggleCalendarModal = () => {
-        setOpenCalendar(!openCalendar);
     };
 
     return (

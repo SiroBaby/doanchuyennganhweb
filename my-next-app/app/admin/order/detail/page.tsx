@@ -11,7 +11,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Chip,
   List,
   ListItem,
   ListItemText,

@@ -10,7 +10,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Typography,
   Paper,
   Button
 } from '@mui/material';

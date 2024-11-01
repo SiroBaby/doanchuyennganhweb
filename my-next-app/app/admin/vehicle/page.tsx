@@ -22,33 +22,25 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useGetVehiclesQuery } from '@/app/store/api/vehicleapi';
 
-interface Vehicle {
-  vehicle_id: number;
-  vehicle_code: string;
-  vehicle_type: string;
-  max_capacity: number;
-  current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED';
-}
-
 const VehiclesPage = () => {
   const router = useRouter();
   const { data: vehicles = [], error, isLoading } = useGetVehiclesQuery();
   
-  const handleEdit = (id: number) => {
-    router.push(`/admin/vehicle/edit/${id}`);
-  };
+  // const handleEdit = (id: number) => {
+  //   router.push(`/admin/vehicle/edit/${id}`);
+  // };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này?')) {
-      try {
-        // Uncomment and implement the actual API call
-        // await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-        alert('Phương tiện đã được xóa thành công!'); // For feedback
-      } catch (error) {
-        alert('Có lỗi xảy ra khi xóa phương tiện.'); // For error feedback
-      }
-    }
-  };
+  // const handleDelete = async (id: number) => {
+  //   if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này?')) {
+  //     try {
+  //       // Uncomment and implement the actual API call
+  //       // await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
+  //       alert('Phương tiện đã được xóa thành công!'); // For feedback
+  //     } catch (error) {
+  //       alert('Có lỗi xảy ra khi xóa phương tiện.'); // For error feedback
+  //     }
+  //   }
+  // };
 
   const getStatusColor = (status: string) => {
     switch (status) {
