@@ -88,7 +88,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
         // Create new user
         await prisma.user.create({
           data: {
-            user_id: id,
+            user_id: String(id),
             email: primaryEmail.email_address,
             full_name: `${first_name || ''} ${last_name || ''}`.trim(),
             password: 'CLERK_AUTH_USER',
