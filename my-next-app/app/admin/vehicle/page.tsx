@@ -20,27 +20,27 @@ import { useRouter } from 'next/navigation';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
-import { useGetVehiclesQuery } from '@/app/store/api/vehicleapi';
+import { useGetVehiclesQuery, useDeleteVehicleMutation } from '@/app/store/api/vehicleapi';
 
 const VehiclesPage = () => {
   const router = useRouter();
   const { data: vehicles = [], error, isLoading } = useGetVehiclesQuery();
+  const [deleteVehicle] = useDeleteVehicleMutation();
   
-  // const handleEdit = (id: number) => {
-  //   router.push(`/admin/vehicle/edit/${id}`);
-  // };
+  const handleEdit = (id: number) => {
+    router.push(`/admin/vehicle/edit/${id}`);
+  };
 
-  // const handleDelete = async (id: number) => {
-  //   if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này?')) {
-  //     try {
-  //       // Uncomment and implement the actual API call
-  //       // await fetch(`/api/vehicles/${id}`, { method: 'DELETE' });
-  //       alert('Phương tiện đã được xóa thành công!'); // For feedback
-  //     } catch (error) {
-  //       alert('Có lỗi xảy ra khi xóa phương tiện.'); // For error feedback
-  //     }
-  //   }
-  // };
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa phương tiện này?')) {
+      try {
+        await deleteVehicle({id}).unwrap(); // Use the delete function here
+        alert('Phương tiện đã được xóa thành công!'); // For feedback
+      } catch (err) {
+        console.error("Có lỗi xảy ra khi xóa phương tiện!:", err);
+      }
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -118,14 +118,14 @@ const VehiclesPage = () => {
                         <IconButton 
                           className="!text-blue-500 hover:!bg-blue-50 dark:hover:!bg-blue-900"
                           size="small"
-                          // onClick={() => handleEdit(vehicle.vehicle_id)} // Pass the vehicle ID
+                          onClick={() => handleEdit(vehicle.vehicle_id)} // Pass the vehicle ID
                         >
                           <EditIcon className="!w-7 !h-6" />
                         </IconButton>
                         <IconButton 
                           className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900"
                           size="small"
-                          // onClick={() => handleDelete(vehicle.vehicle_id)} // Call handleDelete with vehicle ID
+                          onClick={() => handleDelete(vehicle.vehicle_id)}
                         >
                           <DeleteIcon className="!w-7 !h-6" />
                         </IconButton>

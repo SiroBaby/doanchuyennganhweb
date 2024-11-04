@@ -10,22 +10,22 @@ const prisma = new PrismaClient();
 const t = initTRPC.create();
 
 const vehicleRouter = t.router({
-  getVehicleById: t.procedure.input(z.object({
-    id: z.string(), // Xác thực ID là chuỗi
-  })).query(async ({ input }) => {
+  getVehicleById: t.procedure
+  .input(z.number())
+  .query(async ({ input }) => {
     const vehicle = await prisma.vehicle.findUnique({
-      where: { vehicle_id: parseInt(input.id) }, // Chuyển đổi ID thành số nguyên
       select: {
+        vehicle_id: true,
         vehicle_code: true,
         vehicle_type: true,
         max_capacity: true,
         current_status: true,
       },
+      where: { vehicle_id: input }
     });
     if (!vehicle) {
       throw new Error('Vehicle not found');
     }
-
     return vehicle;
   }),
   getVehicles: t.procedure.query(async () => {
@@ -37,7 +37,7 @@ const vehicleRouter = t.router({
         max_capacity: true,
         current_status: true,
       }
-    })
+    });
   }),
   addVehicle: t.procedure.input(z.object({
     vehicle_code: z.string(),
@@ -52,6 +52,31 @@ const vehicleRouter = t.router({
         max_capacity: input.max_capacity,
         current_status: input.current_status,
       },
+    });
+  }),
+  updateVehicle: t.procedure.input(z.object({
+    id: z.number(),
+    vehicle_code: z.string(),
+    vehicle_type: z.string(),
+    max_capacity: z.number(),
+    current_status: z.string(),
+  }),).mutation(async ({ input }) => {
+    const updatedVehicle = await prisma.vehicle.update({
+      where: { vehicle_id: input.id },
+      data: {
+        vehicle_code: input.vehicle_code,
+        vehicle_type: input.vehicle_type,
+        max_capacity: input.max_capacity,
+        current_status: input.current_status,
+      },
+    });
+    return updatedVehicle;
+  }),
+  deleteVehicle: t.procedure
+  .input(z.object({id: z.number() }))
+  .mutation(async ({input}) =>{
+    return await prisma.vehicle.delete({
+      where: {vehicle_id: input.id}
     });
   })
 });
