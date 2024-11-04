@@ -86,11 +86,13 @@ app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: R
       default:
         console.log('Unhandled event type:', event.type);
     }
-
     res.status(200).send('Webhook processed');
-  } catch (error) {
+  } catch (err) {
+    // Ép kiểu cho biến err
+    const error = err as Error; // Hoặc bạn có thể sử dụng any để tạm thời bỏ qua kiểu
     console.error('Error handling webhook:', error);
-    res.status(500).send('Error handling webhook');
+    console.error('Request body:', req.body);
+    res.status(500).json({ message: 'Error handling webhook', error: error.message });
   }
 });
 
