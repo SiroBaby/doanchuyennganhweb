@@ -5,7 +5,7 @@ import cors from 'cors';
 import express from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import crypto from 'crypto';
+import { Webhook } from 'svix';
 import bodyParser from 'body-parser';
 
 const app = express();
@@ -15,155 +15,137 @@ const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 
+type ClerkWebhookEvent = {
+  data: {
+    id: string;
+    first_name: string | null;
+    last_name: string | null;
+    email_addresses: Array<{
+      id: string;
+      email_address: string;
+    }>;
+    primary_email_address_id: string;
+    created_at: number;
+  };
+  object: string;
+  type: string;
+};
 
-const CLERK_WEBHOOK_SECRET = 'whsec_qJshoxPSgNdzwpL9/K6dOOSDXbEaob1E';
+const webhookRouter = express.Router();
 
-function verifyClerkSignature(req: Request, res: Response, next: NextFunction) {
-  try {
-    const svixId = req.headers["svix-id"] as string;
-    const svixTimestamp = req.headers["svix-timestamp"] as string;
-    const svixSignature = req.headers["svix-signature"] as string;
-
-    console.log('Verification Headers:', {
-      svixId,
-      svixTimestamp,
-      svixSignature
+webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+  if (!WEBHOOK_SECRET) {
+    console.error('Missing WEBHOOK_SECRET');
+    return res.status(500).json({ 
+      success: false,
+      message: 'Server configuration error' 
     });
+  }
 
-    if (!svixId || !svixTimestamp || !svixSignature) {
-      console.error('Missing Svix headers');
-      return res.status(401).json({ error: 'Missing Svix headers' });
-    }
+  // Get the headers
+  const svix_id = req.headers['svix-id'] as string;
+  const svix_timestamp = req.headers['svix-timestamp'] as string;
+  const svix_signature = req.headers['svix-signature'] as string;
 
-    // Parse signed content
-    const payloadString = JSON.stringify(req.body);
-    const signedContent = `${svixId}.${svixTimestamp}.${payloadString}`;
+  // If there are no headers, error out
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'Missing svix headers' 
+    });
+  }
 
-    // Get signature from header
-    const signatures = svixSignature.split(' ').map(sig => sig.split(',')[1]);
+  try {
+    const wh = new Webhook(WEBHOOK_SECRET);
+    const evt = wh.verify(JSON.stringify(req.body), {
+      'svix-id': svix_id,
+      'svix-timestamp': svix_timestamp,
+      'svix-signature': svix_signature,
+    }) as ClerkWebhookEvent;
 
-    // Verify signature
-    let isValid = false;
-    for (const signature of signatures) {
-      const hash = crypto
-        .createHmac('sha256', CLERK_WEBHOOK_SECRET)
-        .update(signedContent)
-        .digest('hex');
-      
-      if (hash === signature) {
-        isValid = true;
-        break;
+    console.log('Webhook type:', evt.type);
+    console.log('Webhook data:', evt.data);
+
+    // Handle user.created or user.updated events
+    if (evt.type === 'user.created' || evt.type === 'user.updated') {
+      const { id, email_addresses, first_name, last_name } = evt.data;
+
+      // Get the primary email
+      const primaryEmail = email_addresses.find(
+        email => email.id === evt.data.primary_email_address_id
+      );
+
+      if (!primaryEmail) {
+        console.error('No primary email found for user:', id);
+        return res.status(400).json({
+          success: false,
+          message: 'No primary email found'
+        });
+      }
+
+      if (evt.type === 'user.created') {
+        // Create new user
+        await prisma.user.create({
+          data: {
+            user_id: id,
+            email: primaryEmail.email_address,
+            full_name: `${first_name || ''} ${last_name || ''}`.trim(),
+            password: 'CLERK_AUTH_USER',
+            password_salt: 'CLERK_AUTH_USER',
+            status: 'ACTIVE',
+            created_at: new Date(evt.data.created_at),
+          },
+        });
+        console.log('User created successfully:', id);
+      } else if (evt.type === 'user.updated') {
+        // Update existing user
+        await prisma.user.update({
+          where: { user_id: id },
+          data: {
+            email: primaryEmail.email_address,
+            full_name: `${first_name || ''} ${last_name || ''}`.trim(),
+            updated_at: new Date(),
+          },
+        });
+        console.log('User updated successfully:', id);
       }
     }
 
-    if (!isValid) {
-      console.error('Invalid signature');
-      return res.status(401).json({ error: 'Invalid signature' });
-    }
+    return res.status(200).json({
+      success: true,
+      message: 'Webhook processed successfully'
+    });
 
-    next();
-  } catch (error) {
-    console.error('Error in signature verification:', error);
-    return res.status(500).json({ error: 'Error verifying signature' });
-  }
-}
-
-app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: Response) => {
-  console.log('Webhook received:', req.body.type);
-  
-  const event = req.body;
-
-  try {
-    switch (event.type) {
-      case 'user.created':
-        const userData = {
-          user_id: event.data.id,
-          full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
-          email: event.data.email_addresses?.[0]?.email_address || null,
-          phone_number: event.data.phone_numbers?.[0]?.phone_number || null,
-          status: 'ACTIVE',
-          created_at: new Date(event.data.created_at),
-          password: "thisisasuperstrongpassword"
-        };
-
-        console.log('Creating user with data:', userData);
-
-        await prisma.user.create({
-          data: userData
-        });
-
-        console.log('User created successfully');
-        break;
-
-      case 'user.updated':
-        const updateData = {
-          full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
-          email: event.data.email_addresses?.[0]?.email_address,
-          phone_number: event.data.phone_numbers?.[0]?.phone_number,
-          updated_at: new Date()
-        };
-
-        console.log('Updating user with data:', {
-          userId: event.data.id,
-          updateData
-        });
-
-        await prisma.user.update({
-          where: { user_id: event.data.id },
-          data: updateData
-        });
-
-        console.log('User updated successfully');
-        break;
-
-      case 'user.deleted':
-        console.log('Deleting user:', event.data.id);
-        
-        await prisma.user.update({
-          where: { user_id: event.data.id },
-          data: {
-            status: 'INACTIVE',
-            deleted_at: new Date()
-          }
-        });
-
-        console.log('User marked as deleted successfully');
-        break;
-
-      default:
-        console.log('Unhandled event type:', event.type);
-    }
-
-    res.status(200).json({ success: true });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    console.error('Full event data:', JSON.stringify(event, null, 2));
-    res.status(500).json({
+  } catch (err) {
+    console.error('Error processing webhook:', err);
+    return res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      message: 'Error processing webhook',
+      error: err instanceof Error ? err.message : 'Unknown error'
     });
   }
 });
 
 const vehicleRouter = t.router({
   getVehicleById: t.procedure
-  .input(z.number())
-  .query(async ({ input }) => {
-    const vehicle = await prisma.vehicle.findUnique({
-      select: {
-        vehicle_id: true,
-        vehicle_code: true,
-        vehicle_type: true,
-        max_capacity: true,
-        current_status: true,
-      },
-      where: { vehicle_id: input }
-    });
-    if (!vehicle) {
-      throw new Error('Vehicle not found');
-    }
-    return vehicle;
-  }),
+    .input(z.number())
+    .query(async ({ input }) => {
+      const vehicle = await prisma.vehicle.findUnique({
+        select: {
+          vehicle_id: true,
+          vehicle_code: true,
+          vehicle_type: true,
+          max_capacity: true,
+          current_status: true,
+        },
+        where: { vehicle_id: input }
+      });
+      if (!vehicle) {
+        throw new Error('Vehicle not found');
+      }
+      return vehicle;
+    }),
   getVehicles: t.procedure.query(async () => {
     return await prisma.vehicle.findMany({
       select: {
@@ -209,17 +191,76 @@ const vehicleRouter = t.router({
     return updatedVehicle;
   }),
   deleteVehicle: t.procedure
-  .input(z.object({id: z.number() }))
-  .mutation(async ({input}) =>{
-    return await prisma.vehicle.delete({
-      where: {vehicle_id: input.id}
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      return await prisma.vehicle.delete({
+        where: { vehicle_id: input.id }
+      });
+    })
+});
+
+const userRouter = t.router({
+  getUserById: t.procedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      const user = await prisma.user.findUnique({
+        where: { user_id: input }
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    }),
+
+  getUsers: t.procedure.query(async () => {
+    return await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE'
+      }
     });
-  })
+  }),
+
+  updateUser: t.procedure
+    .input(z.object({
+      user_id: z.string(),
+      full_name: z.string(),
+      email: z.string().email(),
+      phone_number: z.string().nullable(),
+      address: z.string().nullable(),
+      role_id: z.number().nullable(),
+    }))
+    .mutation(async ({ input }) => {
+      return await prisma.user.update({
+        where: { user_id: input.user_id },
+        data: {
+          full_name: input.full_name,
+          email: input.email,
+          phone_number: input.phone_number,
+          address: input.address,
+          role_id: input.role_id,
+          updated_at: new Date()
+        },
+      });
+    }),
+
+  deleteUser: t.procedure
+    .input(z.string())
+    .mutation(async ({ input }) => {
+      return await prisma.user.update({
+        where: { user_id: input },
+        data: {
+          status: 'INACTIVE',
+          deleted_at: new Date()
+        },
+      });
+    })
 });
 
 
 app.use(cors());
 app.use('/trpc', createExpressMiddleware({ router: vehicleRouter }));
+app.use('/trpc', createExpressMiddleware({ router: userRouter }));
+app.use('/api', webhookRouter);
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
