@@ -15,7 +15,7 @@ interface User {
 
 export const usersApi = createApi({
   reducerPath: 'usersApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:10000/trpc' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }),
   tagTypes: ['User'],
   endpoints: (builder) => ({
     getUserById: builder.query<User, string>({
