@@ -11,6 +11,7 @@ import bodyParser from 'body-parser';
 const app = express();
 const prisma = new PrismaClient();
 const t = initTRPC.create();
+const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 
@@ -37,7 +38,6 @@ function verifyClerkSignature(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-
 // Clerk Webhook Handler
 app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: Response) => {
   const event = req.body;
@@ -47,10 +47,10 @@ app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: R
       case 'user.created':
         await prisma.user.create({
           data: {
-            user_id: parseInt(event.data.id.split('_')[1]),
-            full_name: `${event.data.first_name} ${event.data.last_name}`,
+            user_id: event.data.id,
+            full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
             email: event.data.email_addresses[0]?.email_address,
-            phone_number: event.data.phone_numbers[0]?.phone_number,
+            phone_number: event.data.phone_numbers[0]?.phone_number || null,
             password: "thisisasuperstrongpassword",
             status: 'ACTIVE',
             created_at: new Date(),
@@ -176,6 +176,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.listen(4000, () => {
-  console.log('Server is running on http://localhost:4000');
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
 });

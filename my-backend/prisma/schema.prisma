@@ -108,7 +108,7 @@ model TourImage {
 }
 
 model User {
-  user_id        Int       @id @default(autoincrement())
+  user_id        String       @id
   full_name      String
   email          String    @unique
   password       String
@@ -141,7 +141,7 @@ model Discount {
 
 model Booking {
   booking_id      Int       @id @default(autoincrement())
-  user_id         Int
+  user_id         String
   schedule_id     Int
   assignment_id   Int
   booking_date    DateTime
@@ -182,7 +182,7 @@ model Payment {
 model Review {
   review_id    Int       @id @default(autoincrement())
   tour_id      Int
-  user_id      Int
+  user_id      String
   rating       Int
   comment      String?
   review_date  DateTime
@@ -193,7 +193,7 @@ model Review {
 
 model LoginHistory {
   history_id   Int       @id @default(autoincrement())
-  user_id      Int
+  user_id      String
   login_time   DateTime
   ip_address   String?
   created_at   DateTime  @default(now())
@@ -202,7 +202,7 @@ model LoginHistory {
 
 model Notification {
   notification_id Int      @id @default(autoincrement())
-  user_id         Int
+  user_id         String
   message         String
   is_read         Boolean  @default(false)
   created_at      DateTime @default(now())
@@ -212,7 +212,7 @@ model Notification {
 model Invoice {
   invoice_id    Int       @id @default(autoincrement())
   booking_id    Int
-  user_id       Int
+  user_id       String
   amount        Decimal
   date          DateTime
   payment_status String   @default("PENDING")
