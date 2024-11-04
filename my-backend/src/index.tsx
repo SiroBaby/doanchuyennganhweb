@@ -15,84 +15,133 @@ const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 
-// Clerk Webhook Secret
-const CLERK_WEBHOOK_SECRET = 'whsec_qJshoxPSgNdzwpL9/K6dOOSDXbEaob1E'; // Replace with your actual secret
-// Verify Clerk webhook signature
+
+const CLERK_WEBHOOK_SECRET = 'whsec_qJshoxPSgNdzwpL9/K6dOOSDXbEaob1E';
+
 function verifyClerkSignature(req: Request, res: Response, next: NextFunction) {
-  const signature = req.headers['svix-signature'] as string | undefined;
+  try {
+    const svixId = req.headers["svix-id"] as string;
+    const svixTimestamp = req.headers["svix-timestamp"] as string;
+    const svixSignature = req.headers["svix-signature"] as string;
 
-  if (!signature) {
-    return res.status(401).send('Signature missing');
+    console.log('Verification Headers:', {
+      svixId,
+      svixTimestamp,
+      svixSignature
+    });
+
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.error('Missing Svix headers');
+      return res.status(401).json({ error: 'Missing Svix headers' });
+    }
+
+    // Parse signed content
+    const payloadString = JSON.stringify(req.body);
+    const signedContent = `${svixId}.${svixTimestamp}.${payloadString}`;
+
+    // Get signature from header
+    const signatures = svixSignature.split(' ').map(sig => sig.split(',')[1]);
+
+    // Verify signature
+    let isValid = false;
+    for (const signature of signatures) {
+      const hash = crypto
+        .createHmac('sha256', CLERK_WEBHOOK_SECRET)
+        .update(signedContent)
+        .digest('hex');
+      
+      if (hash === signature) {
+        isValid = true;
+        break;
+      }
+    }
+
+    if (!isValid) {
+      console.error('Invalid signature');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error in signature verification:', error);
+    return res.status(500).json({ error: 'Error verifying signature' });
   }
-
-  const payload = JSON.stringify(req.body);
-  const expectedSignature = crypto
-    .createHmac('sha256', CLERK_WEBHOOK_SECRET)
-    .update(payload)
-    .digest('hex');
-
-  if (signature !== expectedSignature) {
-    return res.status(401).send('Invalid signature');
-  }
-
-  next();
 }
 
-// Clerk Webhook Handler
 app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: Response) => {
+  console.log('Webhook received:', req.body.type);
+  
   const event = req.body;
 
   try {
     switch (event.type) {
       case 'user.created':
+        const userData = {
+          user_id: event.data.id,
+          full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
+          email: event.data.email_addresses?.[0]?.email_address || null,
+          phone_number: event.data.phone_numbers?.[0]?.phone_number || null,
+          status: 'ACTIVE',
+          created_at: new Date(event.data.created_at),
+          password: "thisisasuperstrongpassword"
+        };
+
+        console.log('Creating user with data:', userData);
+
         await prisma.user.create({
-          data: {
-            user_id: event.data.id,
-            full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
-            email: event.data.email_addresses[0]?.email_address,
-            phone_number: event.data.phone_numbers[0]?.phone_number || null,
-            password: "thisisasuperstrongpassword",
-            status: 'ACTIVE',
-            created_at: new Date(),
-          },
+          data: userData
         });
-        console.log('User created in database:', event.data);
+
+        console.log('User created successfully');
         break;
 
       case 'user.updated':
+        const updateData = {
+          full_name: `${event.data.first_name || ''} ${event.data.last_name || ''}`.trim(),
+          email: event.data.email_addresses?.[0]?.email_address,
+          phone_number: event.data.phone_numbers?.[0]?.phone_number,
+          updated_at: new Date()
+        };
+
+        console.log('Updating user with data:', {
+          userId: event.data.id,
+          updateData
+        });
+
         await prisma.user.update({
           where: { user_id: event.data.id },
-          data: {
-            full_name: event.data.full_name,
-            email: event.data.email_addresses[0]?.email_address,
-            phone_number: event.data.phone_numbers[0]?.phone_number,
-            updated_at: new Date(),
-          },
+          data: updateData
         });
-        console.log('User updated in database:', event.data);
+
+        console.log('User updated successfully');
         break;
 
       case 'user.deleted':
+        console.log('Deleting user:', event.data.id);
+        
         await prisma.user.update({
           where: { user_id: event.data.id },
           data: {
             status: 'INACTIVE',
-            deleted_at: new Date(),
-          },
+            deleted_at: new Date()
+          }
         });
-        console.log('User marked as deleted in database:', event.data);
+
+        console.log('User marked as deleted successfully');
         break;
 
       default:
         console.log('Unhandled event type:', event.type);
     }
-    res.status(200).send('Webhook processed');
-  } catch (err) {
-    // Ép kiểu cho biến err
-    const error = err as Error; // Hoặc bạn có thể sử dụng any để tạm thời bỏ qua kiểu
-    console.error('Error handling webhook:', error);
-    console.error('Request body:', req.body);
-    res.status(500).json({ message: 'Error handling webhook', error: error.message });
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error('Error processing webhook:', error);
+    console.error('Full event data:', JSON.stringify(event, null, 2));
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
