@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import "../globals.css";
+import { UserButton } from "@clerk/nextjs";
 
 const Home = () => {
   useEffect(() => {
@@ -12,6 +13,7 @@ const Home = () => {
       <div className="p-6 bg-white rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold text-blue-600">Test Page</h1>
         <p className="mt-2 text-gray-600">Testing Tailwind CSS</p>
+        <UserButton />
       </div>
     </div>
   );

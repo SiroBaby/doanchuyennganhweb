@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 const CLERK_WEBHOOK_SECRET = 'whsec_qJshoxPSgNdzwpL9/K6dOOSDXbEaob1E'; // Replace with your actual secret
 // Verify Clerk webhook signature
 function verifyClerkSignature(req: Request, res: Response, next: NextFunction) {
-  const signature = req.headers['clerk-signature'] as string | undefined;
+  const signature = req.headers['svix-signature'] as string | undefined;
 
   if (!signature) {
     return res.status(401).send('Signature missing');
@@ -48,7 +48,7 @@ app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: R
         await prisma.user.create({
           data: {
             user_id: event.data.id,
-            full_name: event.data.full_name,
+            full_name: event.data.username,
             email: event.data.email_addresses[0]?.email_address,
             phone_number: event.data.phone_numbers[0]?.phone_number,
             password: "thisisasuperstrongpassword",
