@@ -47,8 +47,8 @@ app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: R
       case 'user.created':
         await prisma.user.create({
           data: {
-            user_id: event.data.id,
-            full_name: event.data.username,
+            user_id: parseInt(event.data.id.split('_')[1]),
+            full_name: `${event.data.first_name} ${event.data.last_name}`,
             email: event.data.email_addresses[0]?.email_address,
             phone_number: event.data.phone_numbers[0]?.phone_number,
             password: "thisisasuperstrongpassword",
