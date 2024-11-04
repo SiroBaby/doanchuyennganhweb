@@ -3,11 +3,96 @@ import { initTRPC } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import cors from 'cors';
 import express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
+import bodyParser from 'body-parser';
 
 const app = express();
 const prisma = new PrismaClient();
 const t = initTRPC.create();
+
+app.use(bodyParser.json());
+
+// Clerk Webhook Secret
+const CLERK_WEBHOOK_SECRET = 'whsec_qJshoxPSgNdzwpL9/K6dOOSDXbEaob1E'; // Replace with your actual secret
+// Verify Clerk webhook signature
+function verifyClerkSignature(req: Request, res: Response, next: NextFunction) {
+  const signature = req.headers['clerk-signature'] as string | undefined;
+
+  if (!signature) {
+    return res.status(401).send('Signature missing');
+  }
+
+  const payload = JSON.stringify(req.body);
+  const expectedSignature = crypto
+    .createHmac('sha256', CLERK_WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex');
+
+  if (signature !== expectedSignature) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  next();
+}
+
+
+// Clerk Webhook Handler
+app.post('/api/clerk-webhook', verifyClerkSignature, async (req: Request, res: Response) => {
+  const event = req.body;
+
+  try {
+    switch (event.type) {
+      case 'user.created':
+        await prisma.user.create({
+          data: {
+            user_id: event.data.id,
+            full_name: event.data.full_name,
+            email: event.data.email_addresses[0]?.email_address,
+            phone_number: event.data.phone_numbers[0]?.phone_number,
+            password: "thisisasuperstrongpassword",
+            status: 'ACTIVE',
+            created_at: new Date(),
+          },
+        });
+        console.log('User created in database:', event.data);
+        break;
+
+      case 'user.updated':
+        await prisma.user.update({
+          where: { user_id: event.data.id },
+          data: {
+            full_name: event.data.full_name,
+            email: event.data.email_addresses[0]?.email_address,
+            phone_number: event.data.phone_numbers[0]?.phone_number,
+            updated_at: new Date(),
+          },
+        });
+        console.log('User updated in database:', event.data);
+        break;
+
+      case 'user.deleted':
+        await prisma.user.update({
+          where: { user_id: event.data.id },
+          data: {
+            status: 'INACTIVE',
+            deleted_at: new Date(),
+          },
+        });
+        console.log('User marked as deleted in database:', event.data);
+        break;
+
+      default:
+        console.log('Unhandled event type:', event.type);
+    }
+
+    res.status(200).send('Webhook processed');
+  } catch (error) {
+    console.error('Error handling webhook:', error);
+    res.status(500).send('Error handling webhook');
+  }
+});
 
 const vehicleRouter = t.router({
   getVehicleById: t.procedure
