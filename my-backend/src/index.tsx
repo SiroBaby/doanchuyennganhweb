@@ -199,67 +199,9 @@ const vehicleRouter = t.router({
     })
 });
 
-const userRouter = t.router({
-  getUserById: t.procedure
-    .input(z.string())
-    .query(async ({ input }) => {
-      const user = await prisma.user.findUnique({
-        where: { user_id: input }
-      });
-      if (!user) {
-        throw new Error('User not found');
-      }
-      return user;
-    }),
-
-  getUsers: t.procedure.query(async () => {
-    return await prisma.user.findMany({
-      where: {
-        status: 'ACTIVE'
-      }
-    });
-  }),
-
-  updateUser: t.procedure
-    .input(z.object({
-      user_id: z.string(),
-      full_name: z.string(),
-      email: z.string().email(),
-      phone_number: z.string().nullable(),
-      address: z.string().nullable(),
-      role_id: z.number().nullable(),
-    }))
-    .mutation(async ({ input }) => {
-      return await prisma.user.update({
-        where: { user_id: input.user_id },
-        data: {
-          full_name: input.full_name,
-          email: input.email,
-          phone_number: input.phone_number,
-          address: input.address,
-          role_id: input.role_id,
-          updated_at: new Date()
-        },
-      });
-    }),
-
-  deleteUser: t.procedure
-    .input(z.string())
-    .mutation(async ({ input }) => {
-      return await prisma.user.update({
-        where: { user_id: input },
-        data: {
-          status: 'INACTIVE',
-          deleted_at: new Date()
-        },
-      });
-    })
-});
-
 
 app.use(cors());
 app.use('/trpc', createExpressMiddleware({ router: vehicleRouter }));
-app.use('/trpc', createExpressMiddleware({ router: userRouter }));
 app.use('/api', webhookRouter);
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
