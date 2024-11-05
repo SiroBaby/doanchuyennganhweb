@@ -3,12 +3,11 @@ import React from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { FormControl, MenuItem, SvgIcon } from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Image from "next/image";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MenuIcon from "@mui/icons-material/Menu"; // Nhập biểu tượng Menu từ MUI
-import testImage from "../../../public/capybara.jpg";
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
+import { UserButton } from "@clerk/nextjs";
 
 const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const [Language, setLanguage] = React.useState("10");
@@ -54,13 +53,8 @@ const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
           </div>
 
           <div className="flex items-center">
-            <div className="w-10 h-10 relative rounded-full overflow-hidden flex-shrink-0">
-              <Image
-                src={testImage}
-                alt="avatar"
-                fill
-                className="object-cover"
-              />
+            <div className="w-10 h-10  flex-shrink-0 items-center flex">
+              <UserButton/>
             </div>
             <span className="ml-3 text-lg">Hi, Name</span>
           </div>
