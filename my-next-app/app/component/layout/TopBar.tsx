@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, {useState, useEffect} from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import { FormControl, MenuItem, SvgIcon } from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
@@ -8,11 +8,20 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import MenuIcon from "@mui/icons-material/Menu"; // Nhập biểu tượng Menu từ MUI
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
 import { UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
   const [Language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
   const darkMode = useSelector((state: { darkMode: { darkMode: boolean } }) => state.darkMode.darkMode);
+  const { user } = useUser();
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      setUserName(`${user.firstName} ${user.lastName}`);
+    }
+  }, [user]);
 
   const handleToggleDarkMode = () => {
     dispatch(toggleDarkMode());
@@ -52,11 +61,11 @@ const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
             <SvgIcon component={darkMode ? LightModeIcon : DarkModeIcon} className="h-auto w-8 cursor-pointer" />
           </div>
 
-          <div className="flex items-center">
+          <div className={`${user ? "flex items-center" : "hidden"}`}>
             <div className="w-10 h-10  flex-shrink-0 items-center flex">
               <UserButton/>
             </div>
-            <span className="ml-3 text-lg">Hi, Name</span>
+            <span className="ml-3 text-lg">Hi, {userName}</span>
           </div>
         </div>
       </nav>
