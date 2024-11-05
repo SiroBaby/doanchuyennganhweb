@@ -2,7 +2,6 @@
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
-import MenuIcon from "@mui/icons-material/Menu";
 import { FormControl, MenuItem, SvgIcon } from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Image from "next/image";
@@ -10,7 +9,7 @@ import React from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import Logo from "../../../public/logo/nonbg-logo.png";
 
-const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
+const TopBar = ({ }: { onToggleSidebar: () => void }) => {
   const [language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
   const darkMode = useSelector((state: { darkMode: { darkMode: boolean } }) => state.darkMode.darkMode);
@@ -28,7 +27,6 @@ const TopBar = ({ onToggleSidebar }: { onToggleSidebar: () => void }) => {
       <nav className="flex justify-between items-center h-full px-12">
         {/* Logo section on the left */}
         <div className="flex items-center">
-          <SvgIcon component={MenuIcon} className="cursor-pointer mr-4 lg:hidden" onClick={onToggleSidebar} />
           <div className="w-20 h-20 relative rounded-full overflow-hidden flex-shrink-0">
             <Image
               src={Logo}
