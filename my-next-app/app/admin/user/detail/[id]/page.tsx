@@ -4,23 +4,42 @@ import {
   Card,
   CardContent,
   Typography,
+  CircularProgress,
   Button,
   Box,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useGetUserByIdQuery } from '@/app/store/api/userapi';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+
 
 const UserDetailPage = () => {
   const router = useRouter();
+  const param = useParams();
+  const userId = String(param.id);
 
-  // Sample user data (this would be replaced by actual data from the backend)
-  const user = {
-    id: 1,
-    name: 'Trà Vinh',
-    email: 'travinh@example.com',
-    password: '123456',
-    phone: '0123456789',
-    address: '123 Đường ABC, TP.HCM',
-  };
+  const { data: user, error, isLoading } = useGetUserByIdQuery(`"${userId}"`)
+  console.log("data trả về ", user)
+
+  if (isLoading) return <CircularProgress />
+
+  if (error) {
+    const errorMessage = 'Có lỗi xảy ra khi tải dữ liệu.';
+    if ('status' in error) {
+      const fetchError = error as FetchBaseQueryError;
+      return (
+        <Typography color="error">
+          {errorMessage} Mã lỗi: {fetchError.status}
+        </Typography>
+      );
+    }
+    return (
+      <Typography color="error">
+        {errorMessage} Chi tiết: {error.message || 'Không có thông tin chi tiết.'}
+      </Typography>
+    );
+  }
 
   return (
     <div className="h-screen overflow-y-auto bg-gray-100 dark:bg-dark-body">
@@ -30,30 +49,31 @@ const UserDetailPage = () => {
             <Typography variant="h4" className="!text-gray-700 dark:!text-gray-200 !font-bold">
               User detail
             </Typography>
-            <Box 
-              display="flex" 
-              flexDirection="column" 
+            <Box
+              display="flex"
+              flexDirection="column"
               gap={2} // Thay thế cho spacing
               className="mt-4"
             >
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>UserID:</strong> {user.id}
+                <strong>UserID:</strong> {user?.user_id}
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>Tên người dùng:</strong> {user.name}
+                <strong>Tên người dùng:</strong> {user?.full_name}
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>Email:</strong> {user.email}
+                <strong>Email:</strong> {user?.email}
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>Số điện thoại:</strong> {user.phone}
+                  <strong>Được tạo vào lúc:</strong> {user?.created_at}
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>Địa chỉ:</strong> {user.address}
+                <strong>Được cập nhật vào lúc:</strong> {user?.updated_at} {/* Cần lưu ý khi hiển thị mật khẩu */}
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-300">
-                <strong>Mật khẩu:</strong> {user.password} {/* Cần lưu ý khi hiển thị mật khẩu */}
+                <strong>Được phân quyền:</strong> {user?.role_id === null ? 0 : user?.role_id} {/* Cần lưu ý khi hiển thị mật khẩu */}
               </Typography>
+
             </Box>
             <Button
               variant="contained"

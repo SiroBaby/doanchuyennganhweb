@@ -5,14 +5,23 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import { FormControl, MenuItem, SvgIcon } from "@mui/material";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Image from "next/image";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from 'react-redux';
 import Logo from "../../../public/logo/nonbg-logo.png";
+import { UserButton, useUser } from "@clerk/nextjs";
 
 const TopBar = ({ }: { onToggleSidebar: () => void }) => {
   const [language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
   const darkMode = useSelector((state: { darkMode: { darkMode: boolean } }) => state.darkMode.darkMode);
+  const { user } = useUser();
+  const [userName, setUserName] = useState("");
+  
+  useEffect(() => {
+    if (user) {
+      setUserName(`${user.firstName} ${user.lastName}`);
+    }
+  }, [user]);
 
   const handleToggleDarkMode = () => {
     dispatch(toggleDarkMode());
@@ -57,7 +66,12 @@ const TopBar = ({ }: { onToggleSidebar: () => void }) => {
             <SvgIcon component={darkMode ? LightModeIcon : DarkModeIcon} className="h-auto w-8 cursor-pointer" />
           </div>
 
-          <span className="ml-3 text-lg">Hi, Name</span>
+          <div className={`${user ? "flex items-center" : "hidden"}`}>
+            <div className="w-10 h-10  flex-shrink-0 items-center flex">
+              <UserButton/>
+            </div>
+            <span className="ml-3 text-lg">Hi, {userName}</span>
+          </div>
         </div>
       </nav>
     </div>

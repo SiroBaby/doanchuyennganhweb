@@ -37,9 +37,9 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
     console.error('Missing WEBHOOK_SECRET');
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: 'Server configuration error' 
+      message: 'Server configuration error'
     });
   }
 
@@ -50,9 +50,9 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
-      message: 'Missing svix headers' 
+      message: 'Missing svix headers'
     });
   }
 
@@ -204,9 +204,40 @@ const vehicleRouter = t.router({
     })
 });
 
+const userRouter = t.router({
+  getUserById: t.procedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      try{
+      const user = await prisma.user.findUnique({
+        where: { user_id: input },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    } catch (error) {
+      console.error('Error in getUserById:', error);
+      throw error;
+    }
+    }),
+
+  getUsers: t.procedure.query(async () => {
+    return await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE'
+      }
+    });
+  })
+});
+
+const appRouter = t.router({
+  vehicle: vehicleRouter,
+  user: userRouter,
+});
 
 app.use(cors());
-app.use('/trpc', createExpressMiddleware({ router: vehicleRouter }));
+app.use('/trpc', createExpressMiddleware({ router: appRouter }));
 app.use('/api', webhookRouter);
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);

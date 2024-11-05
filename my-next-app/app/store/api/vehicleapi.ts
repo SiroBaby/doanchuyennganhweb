@@ -9,7 +9,7 @@ export const vehiclesApi = createApi({
   tagTypes: ['Vehicle'], // Định nghĩa loại tag cho việc invalidate cache
   endpoints: (builder) => ({
     getVehicleById: builder.query<{ vehicle_id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }, number>({
-    query: (id) => `getVehicleById?input=${id}`,
+    query: (id) => `vehicle.getVehicleById?input=${id}`,
     transformResponse: (response: { result: { data: { vehicle_id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' } } }) => {
       return response.result.data; // Trả về đối tượng vehicle
     },
@@ -17,7 +17,7 @@ export const vehiclesApi = createApi({
       result ? [{ type: 'Vehicle', id: result.vehicle_code }] : ['Vehicle'], // Cung cấp tag cho phương tiện
   }),
     getVehicles: builder.query<Array<{ vehicle_id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }>, void>({ // Thay đổi kiểu trả về là mảng Vehicle
-      query: () => 'getVehicles',
+      query: () => 'vehicle.getVehicles',
       transformResponse: (response: { result: { data: Array<{ vehicle_id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }> } }) => response.result.data, // Chuyển đổi phản hồi
       providesTags: (result) =>
         result ?
@@ -26,7 +26,7 @@ export const vehiclesApi = createApi({
     }),
     addVehicle: builder.mutation<void, { vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }>({
       query: (vehicle) => ({
-        url: 'addVehicle',
+        url: 'vehicle.addVehicle',
         method: 'POST',
         body: vehicle,
       }),
@@ -34,7 +34,7 @@ export const vehiclesApi = createApi({
     }),
     updateVehicle: builder.mutation<void, { id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }>({
       query: ({ id, ...vehicle }) => ({
-        url: `updateVehicle`, // Đường dẫn có thể thay đổi tùy thuộc vào backend
+        url: `vehicle.updateVehicle`, // Đường dẫn có thể thay đổi tùy thuộc vào backend
         method: 'POST',
         body: {id, ...vehicle},
       }),
@@ -42,7 +42,7 @@ export const vehiclesApi = createApi({
     }),
     deleteVehicle: builder.mutation<void, {id: number}>({
       query: (id) => ({
-        url: `deleteVehicle`,
+        url: `vehicle.deleteVehicle`,
         method: 'POST',
         body: id,
       }),
