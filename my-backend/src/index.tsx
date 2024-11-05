@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { initTRPC } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
-import bodyParser from 'body-parser';
 import cors from 'cors';
-import express, { Request, Response } from 'express';
-import { Webhook } from 'svix';
+import express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { Webhook } from 'svix';
+import bodyParser from 'body-parser';
 
 const app = express();
 const prisma = new PrismaClient();
