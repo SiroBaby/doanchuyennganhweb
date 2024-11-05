@@ -1,22 +1,16 @@
 "use client";
-import { useEffect } from "react";
+import SearchForm from '../component/layout/SearchForm';
 import "../globals.css";
-import { UserButton } from "@clerk/nextjs";
 
-const Home = () => {
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-    }
-  }, []);
+
+const HomePage: React.FC = () => {
   return (
-    <div className="flex justify-center items-center min-h-screen bg-blue-100">
-      <div className="p-6 bg-white rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-blue-600">Test Page</h1>
-        <p className="mt-2 text-gray-600">Testing Tailwind CSS</p>
-        <UserButton />
-      </div>
+    <div>
+      <h1>chào mừng m đến với Home Page</h1>
+      <SearchForm /> 
     </div>
   );
 };
 
-export default Home;
+
+export default HomePage;
