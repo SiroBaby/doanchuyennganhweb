@@ -211,10 +211,6 @@ const userRouter = t.router({
       try{
       const user = await prisma.user.findUnique({
         where: { user_id: input },
-        select: 
-          { user_id: true,
-            role_id: true,
-          }
       });
       if (!user) {
         throw new Error('User not found');

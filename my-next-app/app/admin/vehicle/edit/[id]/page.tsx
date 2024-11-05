@@ -65,6 +65,7 @@ const EditVehiclePage = () => {
         setIsSubmitting(true);
         try {
             await updateVehicle({ id: vehicleId, ...vehicleData }).unwrap();
+            alert("Phương tiện được cập nhật thành công")
             router.push('/admin/vehicle');
         } catch (error) {
             console.error("Error updating vehicle:", error);

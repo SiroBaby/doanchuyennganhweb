@@ -28,7 +28,7 @@ export const usersApi = createApi({
     }),
 
     getUsers: builder.query<User[], void>({
-      query: () => 'getUsers',
+      query: () => 'user.getUsers',
       transformResponse: (response: { result: { data: User[] } }) => response.result.data,
       providesTags: (result) =>
         result
