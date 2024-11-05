@@ -86,7 +86,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
         // Create new user
         await prisma.user.create({
           data: {
-            user_id: id,
+            user_id: id.toString(),
             email: primaryEmail.email_address,
             full_name: `${first_name || ''} ${last_name || ''}`.trim(),
             password: 'CLERK_AUTH_USER',
@@ -99,7 +99,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
       } else if (evt.type === 'user.updated') {
         // Update existing user
         await prisma.user.update({
-          where: { user_id: id },
+          where: { user_id: id.toString() },
           data: {
             email: primaryEmail.email_address,
             full_name: `${first_name || ''} ${last_name || ''}`.trim(),
@@ -112,7 +112,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
 
     if (evt.type === 'user.deleted') {
       await prisma.user.delete({
-        where: { user_id: evt.data.id },
+        where: { user_id: evt.data.id.toString() },
       });
       console.log('User deleted successfully:', evt.data.id);
     }
