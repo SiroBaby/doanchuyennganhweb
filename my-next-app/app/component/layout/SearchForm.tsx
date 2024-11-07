@@ -6,7 +6,7 @@ const Container = styled.div`
   align-items: center;
   background-color: #d3d3d3;
   padding: 10px;
-  border-radius: 20px;
+  border-radius: 5px;
   font-family: Arial, sans-serif;
 `;
 

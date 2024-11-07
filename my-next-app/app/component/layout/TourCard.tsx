@@ -1,5 +1,4 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 // Định nghĩa interface Tour
@@ -15,7 +14,7 @@ interface Tour {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
-  imageUrl: string; // Đảm bảo API của bạn trả về thuộc tính này
+  imageUrl: string;
   countdownTime: string;
   code: string;
   departureCity: string;
@@ -109,24 +108,27 @@ const Button = styled.button`
 `;
 
 const TourCard: React.FC = () => {
-  const [tour, setTour] = useState<Tour | null>(null);
-
-  useEffect(() => {
-    const fetchTourData = async () => {
-      try {
-        const response = await axios.get<Tour>('https://api.example.com/tours/1'); // URL của API
-        setTour(response.data);
-      } catch (error) {
-        console.error('Error fetching tour data', error);
-      }
-    };
-
-    fetchTourData();
-  }, []);
-
-  if (!tour) {
-    return <div>Loading...</div>;
-  }
+  // Thay vì gọi API, chúng ta sẽ sử dụng dữ liệu giả mạo
+  const tour: Tour = {
+    tour_id: 1,
+    tour_name: 'Tour Hà Nội - Sapa',
+    description: 'Tour du lịch khám phá Sapa với các điểm đến nổi tiếng.',
+    duration: '3 ngày 2 đêm',
+    price_range: '500.000 đ - 1.000.000 đ',
+    max_participants: 20,
+    location_id: 1,
+    tour_type_id: 1,
+    created_at: '2024-11-01',
+    updated_at: '2024-11-02',
+    imageUrl: '/hanoi.jpg', // Link ảnh ví dụ
+    countdownTime: '3 ngày còn lại',
+    code: 'SA-12345',
+    departureCity: 'Hà Nội',
+    departureDate: '2024-11-10',
+    seatsAvailable: 12,
+    originalPrice: 1500000,
+    discountedPrice: 1200000
+  };
 
   return (
     <CardContainer>
