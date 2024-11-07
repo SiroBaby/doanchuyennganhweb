@@ -1,6 +1,7 @@
 "use client";
 import AnotherTopBar from '../component/layout/AnotherTopBar';
 import SearchForm from '../component/layout/SearchForm';
+import TourCard from '../component/layout/TourCard';
 import "../globals.css";
 
 
@@ -14,6 +15,8 @@ const HomePage: React.FC = () => {
       <SearchForm />
       <br />
       <h1>chào mừng m đến với Home Page</h1>
+      <br/>
+      <TourCard/>
     </div>
   );
 };
