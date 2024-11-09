@@ -7,6 +7,9 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { Webhook } from 'svix';
 import bodyParser from 'body-parser';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -14,6 +17,35 @@ const t = initTRPC.create();
 const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '../img');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'));
+    }
+  }
+});
 
 type ClerkWebhookEvent = {
   data: {
@@ -201,7 +233,14 @@ const vehicleRouter = t.router({
       return await prisma.vehicle.delete({
         where: { vehicle_id: input.id }
       });
-    })
+    }),
+  getAvailableVehicles: t.procedure.query(async () => {
+    return await prisma.vehicle.findMany({
+      where: {
+        current_status: 'AVAILABLE'
+      }
+    });
+  }),
 });
 
 const userRouter = t.router({
@@ -231,9 +270,342 @@ const userRouter = t.router({
   })
 });
 
+const TourRouter = t.router({
+  getTourById: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      const tour = await prisma.tour.findUnique({
+        where: { tour_id: input },
+        include: {
+          Location: true,
+          TourType: true,
+          TourImages: true,
+        }
+      });
+      if (!tour) {
+        throw new Error('Tour not found');
+      }
+      return tour;
+    }),
+  getTours: t.procedure.query(async () => {
+    return await prisma.tour.findMany({
+      include: {
+        Location: true,
+        TourType: true,
+        TourImages: true,
+      },
+      where: {
+        deleted_at: null,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+  }),
+  addTour: t.procedure
+    .input(z.object({
+      tour_name: z.string().min(1, 'Tên tour là bắt buộc'),
+      description: z.string().nullable(),
+      duration: z.string(),
+      price_range: z.string(),
+      max_participants: z.number().int().min(1, 'Số người tối thiểu là 1'),
+      location_id: z.number().int().positive('Địa điểm là bắt buộc'),
+      tour_type_id: z.number().int().positive('Loại tour là bắt buộc'),
+      images: z.array(z.string()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // First check if location and tour type exist
+        const [location, tourType] = await Promise.all([
+          prisma.location.findUnique({
+            where: { location_id: input.location_id }
+          }),
+          prisma.tourType.findUnique({
+            where: { type_id: input.tour_type_id }
+          })
+        ]);
+
+        if (!location) {
+          throw new Error('Địa điểm không tồn tại');
+        }
+
+        if (!tourType) {
+          throw new Error('Loại tour không tồn tại');
+        }
+
+        // Create tour with transaction to ensure data consistency
+        const tour = await prisma.$transaction(async (tx) => {
+          // Create the tour first
+          const newTour = await tx.tour.create({
+            data: {
+              tour_name: input.tour_name,
+              description: input.description,
+              duration: input.duration,
+              price_range: input.price_range,
+              max_participants: input.max_participants,
+              location_id: input.location_id,
+              tour_type_id: input.tour_type_id,
+              created_at: new Date(),
+              updated_at: new Date(),
+            },
+          });
+
+          // If there are images, create the image records
+          if (input.images && input.images.length > 0) {
+            await tx.tourImage.createMany({
+              data: input.images.map(image_url => ({
+                tour_id: newTour.tour_id,
+                image_url,
+                created_at: new Date(),
+              })),
+            });
+          }
+
+          // Return the complete tour with relations
+          return await tx.tour.findUnique({
+            where: { tour_id: newTour.tour_id },
+            include: {
+              Location: true,
+              TourType: true,
+              TourImages: true,
+            },
+          });
+        });
+
+        if (!tour) {
+          throw new Error('Lỗi khi tạo tour');
+        }
+
+        return tour;
+      } catch (error) {
+        console.error('Error creating tour:', error);
+        throw new Error(error instanceof Error ? error.message : 'Không thể tạo tour');
+      }
+    }),
+  deleteTour: t.procedure
+    .input(z.object({
+      id: z.number()
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Soft delete by updating deleted_at
+        await prisma.tour.update({
+          where: { tour_id: input.id },
+          data: {
+            deleted_at: new Date(),
+          },
+        });
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting tour:', error);
+        throw new Error('Không thể xóa tour');
+      }
+    }),
+  updateTour: t.procedure
+    .input(z.object({
+      tour_id: z.number(),
+      tour_name: z.string().min(1),
+      description: z.string().nullable(),
+      duration: z.string(),
+      price_range: z.string(),
+      max_participants: z.number().int().min(1),
+      location_id: z.number().int().positive(),
+      tour_type_id: z.number().int().positive(),
+      images: z.array(z.string()).optional(),
+      images_to_delete: z.array(z.number()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const tour = await prisma.$transaction(async (tx) => {
+          // Delete specified images
+          if (input.images_to_delete?.length) {
+            await tx.tourImage.deleteMany({
+              where: {
+                image_id: { in: input.images_to_delete },
+              },
+            });
+          }
+
+          // Add new images
+          if (input.images?.length) {
+            await tx.tourImage.createMany({
+              data: input.images.map(image_url => ({
+                tour_id: input.tour_id,
+                image_url,
+                created_at: new Date(),
+              })),
+            });
+          }
+
+          // Update tour details
+          const updatedTour = await tx.tour.update({
+            where: { tour_id: input.tour_id },
+            data: {
+              tour_name: input.tour_name,
+              description: input.description,
+              duration: input.duration,
+              price_range: input.price_range,
+              max_participants: input.max_participants,
+              location_id: input.location_id,
+              tour_type_id: input.tour_type_id,
+              updated_at: new Date(),
+            },
+            include: {
+              Location: true,
+              TourType: true,
+              TourImages: true,
+            },
+          });
+
+          return updatedTour;
+        });
+
+        return tour;
+      } catch (error) {
+        console.error('Error updating tour:', error);
+        throw new Error('Không thể cập nhật tour');
+      }
+    }),
+
+  addSchedule: t.procedure
+    .input(z.object({
+      tourId: z.number(),
+      schedule: z.object({
+        start_date: z.string(),
+        end_date: z.string(),
+        base_price: z.number(),
+        available_slots: z.number(),
+        status: z.enum(['ACTIVE', 'CANCELLED', 'COMPLETED', 'FULL']),
+        vehicle_id: z.number().optional(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      const schedule = await prisma.tourSchedule.create({
+        data: {
+          tour_id: input.tourId,
+          start_date: new Date(input.schedule.start_date),
+          end_date: new Date(input.schedule.end_date),
+          base_price: input.schedule.base_price,
+          available_slots: input.schedule.available_slots,
+          status: input.schedule.status,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      });
+
+      if (input.schedule.vehicle_id) {
+        await prisma.vehicleAssignment.create({
+          data: {
+            schedule_id: schedule.schedule_id,
+            vehicle_id: input.schedule.vehicle_id,
+            available_seats: input.schedule.available_slots,
+            created_at: new Date(),
+            updated_at: new Date(),
+          },
+        });
+      }
+
+      return schedule;
+    }),
+
+  deleteSchedule: t.procedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await prisma.tourSchedule.delete({
+        where: { schedule_id: input.id },
+      });
+      return { success: true };
+    }),
+  updateSchedule: t.procedure
+    .input(z.object({
+      schedule_id: z.number(),
+      start_date: z.string(),
+      end_date: z.string(),
+      base_price: z.number(),
+      available_slots: z.number(),
+      status: z.enum(['ACTIVE', 'CANCELLED', 'COMPLETED', 'FULL']),
+      vehicle_id: z.number().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.tourSchedule.update({
+            where: { schedule_id: input.schedule_id },
+            data: {
+              start_date: new Date(input.start_date),
+              end_date: new Date(input.end_date),
+              base_price: input.base_price,
+              available_slots: input.available_slots,
+              status: input.status,
+              updated_at: new Date(),
+            },
+          });
+
+          // Handle vehicle assignment
+          if (input.vehicle_id) {
+            // Delete existing assignment if any
+            await tx.vehicleAssignment.deleteMany({
+              where: { schedule_id: input.schedule_id }
+            });
+
+            // Create new assignment
+            await tx.vehicleAssignment.create({
+              data: {
+                schedule_id: input.schedule_id,
+                vehicle_id: input.vehicle_id,
+                available_seats: input.available_slots,
+                created_at: new Date(),
+                updated_at: new Date(),
+              },
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error updating schedule:', error);
+        throw new Error('Không thể cập nhật lịch trình');
+      }
+    }),
+
+  getSchedulesByTourId: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      const schedules = await prisma.tourSchedule.findMany({
+        where: { 
+          tour_id: input 
+        },
+        include: {
+          VehicleAssignments: {
+            include: {
+              Vehicle: true
+            }
+          }
+        },
+        orderBy: {
+          start_date: 'asc'
+        }
+      });
+      return schedules;
+    }),
+});
+
+const locationRouter = t.router({
+  getLocations: t.procedure.query(async () => {
+    return await prisma.location.findMany();
+  }),
+});
+
+const tourTypeRouter = t.router({
+  getTourTypes: t.procedure.query(async () => {
+    return await prisma.tourType.findMany();
+  }),
+});
+
 const appRouter = t.router({
   vehicle: vehicleRouter,
   user: userRouter,
+  tour: TourRouter,
+  location: locationRouter,
+  tourType: tourTypeRouter,
 });
 
 app.use(cors());
@@ -242,6 +614,21 @@ app.use('/api', webhookRouter);
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
+});
+
+// Serve static files from img directory
+app.use('/img', express.static(path.join(__dirname, '../img')));
+
+// Add image upload endpoint
+app.post('/api/upload', upload.array('images'), (req, res) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    const imageUrls = files.map(file => `/img/${file.filename}`);
+    res.json({ imageUrls });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Upload failed' });
+  }
 });
 
 app.listen(port, () => {
