@@ -1,7 +1,11 @@
+'use client'
 import React from 'react';
 import {
   Card,
   CardContent,
+  Chip,
+  CircularProgress,
+  Typography,
   Table,
   TableBody,
   TableCell,
@@ -12,20 +16,47 @@ import {
   Paper
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
+import { useGetUsersQuery } from '@/app/store/api/userapi';
+import { useRouter } from 'next/navigation';
 
 const UserPage = () => {
-  // Sample user data
-  const users = [
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-    { id: 1, name: 'Trà Vinh', email: 'Trà Vinh', pass: '123456' },
-  ];
 
+  const { data: users = [], error, isLoading } = useGetUsersQuery()
+  const router = useRouter()
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'success';
+      case 'DELETE':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const handleDetailUser = (id: string) => {
+    router.push(`/admin/user/detail/${id}`)
+  }
+
+  if (isLoading) return <CircularProgress />; // Show loading spinner
+  if (error) {
+    const errorMessage = 'Có lỗi xảy ra khi tải dữ liệu.';
+    if ('status' in error) {
+      const fetchError = error as FetchBaseQueryError;
+      return (
+        <Typography color="error">
+          {errorMessage} Mã lỗi: {fetchError.status}
+        </Typography>
+      );
+    }
+    return (
+      <Typography color="error">
+        {errorMessage} Chi tiết: {error.message || 'Không có thông tin chi tiết.'}
+      </Typography>
+    );
+  }
   return (
     <div className="h-screen overflow-y-auto bg-gray-100 dark:bg-dark-body">
       {/* Fixed height container for the table */}
@@ -48,10 +79,10 @@ const UserPage = () => {
                         UserName
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        Password
+                        Email
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        UserEmail
+                        Status
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
                         Action
@@ -59,40 +90,34 @@ const UserPage = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {users.map((user, index) => (
+                    {users.map((user) => (
                       <TableRow 
-                        key={index}
+                        key={user.user_id}
                         className="hover:!bg-gray-50 dark:hover:!bg-dark-selected transition-colors duration-150"
                       >
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {user.id}
+                          {user.user_id}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {user.name}
-                        </TableCell>
-                        <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {user.pass}
+                          {user.full_name}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           {user.email}
                         </TableCell>
+                        <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
+                          <Chip 
+                            label = {user.status}
+                            color = {getStatusColor(user.status)}
+                          />
+                        </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
                             <IconButton 
-                            //   onClick={() => console.log('Edit user', user.id)}
+                              onClick={() => handleDetailUser(user.user_id)}
                               className="!text-blue-500 hover:!bg-blue-50 dark:hover:!bg-blue-900"
                               size="small"
                             >
                               <EditIcon className="!w-7 !h-6" />
                             </IconButton>
-                            <IconButton 
-                            //   onClick={() => console.log('Delete user', user.id)}
-                              className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900"
-                              size="small"
-                            >
-                              <DeleteIcon className="!w-7 !h-6" />
-                            </IconButton>
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

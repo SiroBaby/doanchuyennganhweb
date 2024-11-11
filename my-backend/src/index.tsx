@@ -36,9 +36,9 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
     console.error('Missing WEBHOOK_SECRET');
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
-      message: 'Server configuration error' 
+      message: 'Server configuration error'
     });
   }
 
@@ -49,9 +49,9 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       success: false,
-      message: 'Missing svix headers' 
+      message: 'Missing svix headers'
     });
   }
 
@@ -85,7 +85,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
         // Create new user
         await prisma.user.create({
           data: {
-            user_id: id,
+            user_id: id.toString(),
             email: primaryEmail.email_address,
             full_name: `${first_name || ''} ${last_name || ''}`.trim(),
             password: 'CLERK_AUTH_USER',
@@ -98,7 +98,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
       } else if (evt.type === 'user.updated') {
         // Update existing user
         await prisma.user.update({
-          where: { user_id: id },
+          where: { user_id: id.toString() },
           data: {
             email: primaryEmail.email_address,
             full_name: `${first_name || ''} ${last_name || ''}`.trim(),
@@ -111,7 +111,7 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
 
     if (evt.type === 'user.deleted') {
       await prisma.user.delete({
-        where: { user_id: evt.data.id },
+        where: { user_id: evt.data.id.toString() },
       });
       console.log('User deleted successfully:', evt.data.id);
     }
@@ -203,9 +203,40 @@ const vehicleRouter = t.router({
     })
 });
 
+const userRouter = t.router({
+  getUserById: t.procedure
+    .input(z.string())
+    .query(async ({ input }) => {
+      try{
+      const user = await prisma.user.findUnique({
+        where: { user_id: input },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    } catch (error) {
+      console.error('Error in getUserById:', error);
+      throw error;
+    }
+    }),
+
+  getUsers: t.procedure.query(async () => {
+    return await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE'
+      }
+    });
+  })
+});
+
+const appRouter = t.router({
+  vehicle: vehicleRouter,
+  user: userRouter,
+});
 
 app.use(cors());
-app.use('/trpc', createExpressMiddleware({ router: vehicleRouter }));
+app.use('/trpc', createExpressMiddleware({ router: appRouter }));
 app.use('/api', webhookRouter);
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
