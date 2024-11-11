@@ -2,6 +2,7 @@
 import AnotherTopBar from '../component/layout/AnotherTopBar';
 import SearchForm from '../component/layout/SearchForm';
 import TourCard from '../component/layout/TourCard';
+import Footer from '../component/layout/Footer';
 import "../globals.css";
 
 const HomePage: React.FC = () => {
@@ -54,6 +55,7 @@ const HomePage: React.FC = () => {
           </section>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 };
