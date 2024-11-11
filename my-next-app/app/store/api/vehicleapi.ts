@@ -5,7 +5,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 // Tạo API cho phương tiện
 export const vehiclesApi = createApi({
   reducerPath: 'vehiclesApi',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }), // Cập nhật địa chỉ base URL
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://doanchuyennganhweb.onrender.com/trpc' }), // Cập nhật địa chỉ base URL
   tagTypes: ['Vehicle'], // Định nghĩa loại tag cho việc invalidate cache
   endpoints: (builder) => ({
     getVehicleById: builder.query<{ vehicle_id: number; vehicle_code: string; vehicle_type: string; max_capacity: number; current_status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'RETIRED' }, number>({

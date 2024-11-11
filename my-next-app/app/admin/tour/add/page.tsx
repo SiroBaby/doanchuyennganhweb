@@ -51,7 +51,7 @@ const AddTourPage = () => {
         formData.append('images', file);
       });
 
-      const response = await fetch('http://localhost:4000/api/upload', {
+      const response = await fetch('https://doanchuyennganhweb.onrender.com/api/upload', {
         method: 'POST',
         body: formData,
       });

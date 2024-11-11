@@ -108,7 +108,7 @@ const TourPage = () => {
                           <div className="relative w-16 h-16">
                             <Image
                               src={tour.TourImages[0]?.image_url 
-                                ? `http://localhost:4000${tour.TourImages[0].image_url}` 
+                                ? `https://doanchuyennganhweb.onrender.com${tour.TourImages[0].image_url}` 
                                 : '/placeholder.jpg'}
                               alt={tour.tour_name}
                               fill
