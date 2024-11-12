@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold  dark:text-dark-text text-gray-800 mb-4 animate-fade-in">
+          <h1 className="text-4xl font-bold dark:text-dark-text text-gray-800 mb-4 animate-fade-in">
             Khám phá những điểm đến tuyệt vời
           </h1>
           <p className="text-gray-600 text-lg mb-8">
@@ -33,10 +33,10 @@ const HomePage: React.FC = () => {
           {/* Popular Tours */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Tour phổ biến</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="transform hover:scale-105 transition duration-300">
-                  <TourCard/>
+                  <TourCard />
                 </div>
               ))}
             </div>
@@ -45,17 +45,17 @@ const HomePage: React.FC = () => {
           {/* Recommended Tours */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">Đề xuất cho bạn</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="transform hover:scale-105 transition duration-300">
-                  <TourCard/>
+                  <TourCard />
                 </div>
               ))}
             </div>
           </section>
         </div>
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };

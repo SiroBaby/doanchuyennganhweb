@@ -26,15 +26,18 @@ interface Tour {
 }
 
 const CardContainer = styled.div`
-  width: 300px;
+  width: 100%;
+  max-width: 300px; /* Điều chỉnh max-width để thẻ có kích thước tối đa */
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
   font-family: Arial, sans-serif;
+  margin: 0 5px 10px 5px; /* Thêm khoảng cách giữa các thẻ */
 `;
 
 const ImageContainer = styled.div`
   position: relative;
+  height: 200px; /* Đặt chiều cao cố định cho ảnh */
 `;
 
 const HeartIcon = styled.div`
@@ -65,6 +68,7 @@ const ContentContainer = styled.div`
 const TourTitle = styled.h2`
   font-size: 18px;
   color: #333;
+  margin: 0;
 `;
 
 const InfoText = styled.p`
@@ -94,7 +98,7 @@ const OriginalPrice = styled.span`
 `;
 
 const DiscountedPrice = styled.span`
-  font-size: 20px;
+  font-size: 19px;
   color: red;
   font-weight: bold;
 `;
@@ -109,7 +113,6 @@ const Button = styled.button`
 `;
 
 const TourCard: React.FC = () => {
-  // Thay vì gọi API, chúng ta sẽ sử dụng dữ liệu giả mạo
   const tour: Tour = {
     tour_id: 1,
     tour_name: 'Tour Hà Nội - Sapa',
@@ -137,27 +140,27 @@ const TourCard: React.FC = () => {
         <Image
           src={tour.imageUrl}
           alt={tour.tour_name}
-          width="400"
-          height="200"
+          layout="fill" // Điều chỉnh ảnh để tự động thay đổi kích thước theo container
+          objectFit="cover" // Đảm bảo ảnh luôn phủ đầy không gian
         />
         <HeartIcon>❤️</HeartIcon>
         <Countdown>{tour.countdownTime}</Countdown>
       </ImageContainer>
       <ContentContainer>
-        <TourTitle className='dark:text-dark-text'>{tour.tour_name}</TourTitle>
-        <InfoText className='dark:text-dark-text'>
+        <TourTitle>{tour.tour_name}</TourTitle>
+        <InfoText>
           <span>Mã tour:</span> {tour.code}
         </InfoText>
-        <InfoText className='dark:text-dark-text'>
+        <InfoText>
           <span>Khởi hành:</span> {tour.departureCity}
         </InfoText>
-        <InfoText className='dark:text-dark-text'>
+        <InfoText>
           <span>Ngày khởi hành:</span> {tour.departureDate}
         </InfoText>
-        <InfoText className='dark:text-dark-text'>
+        <InfoText>
           <span>Thời gian:</span> {tour.duration}
         </InfoText>
-        <InfoText className='dark:text-dark-text'>
+        <InfoText>
           <span>Số chỗ còn nhận:</span> {tour.seatsAvailable}
         </InfoText>
         <PriceContainer>

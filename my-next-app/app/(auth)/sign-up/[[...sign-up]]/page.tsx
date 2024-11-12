@@ -1,4 +1,5 @@
 import { SignUp } from '@clerk/nextjs';
+import Image from 'next/image'; // Import Image từ Next.js
 import React from 'react';
 
 const RegisterPage: React.FC = () => {
@@ -7,10 +8,13 @@ const RegisterPage: React.FC = () => {
       <div className="bg-white rounded-3xl shadow-xl p-10 flex justify-center items-center space-x-10">
         {/* Left Side: Image and Text */}
         <div className="flex flex-col items-center h-full justify-center">
-          <img
+          {/* Sử dụng Image từ Next.js */}
+          <Image
             src="/reg-pic.jpeg"
             alt="Travel"
-            className="rounded-xl w-80"
+            width={320} 
+            height={320} 
+            className="rounded-xl" 
           />
           <h2 className="text-2xl text-gray-800 text-center mt-6">
             Du lịch theo cách sống của bạn
