@@ -1,178 +1,38 @@
-import Image from 'next/image';
 import React from 'react';
-import styled from 'styled-components';
-
-// Định nghĩa interface Tour
-interface Tour {
-  tour_id: number;
-  tour_name: string;
-  description?: string;
-  duration?: string;
-  price_range?: string;
-  max_participants: number;
-  location_id: number;
-  tour_type_id: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-  imageUrl: string;
-  countdownTime: string;
-  code: string;
-  departureCity: string;
-  departureDate: string;
-  seatsAvailable: number;
-  originalPrice: number;
-  discountedPrice: number;
-}
-
-const CardContainer = styled.div`
-  width: 100%;
-  max-width: 300px; /* Điều chỉnh max-width để thẻ có kích thước tối đa */
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-  margin: 0 5px 10px 5px; /* Thêm khoảng cách giữa các thẻ */
-`;
-
-const ImageContainer = styled.div`
-  position: relative;
-  height: 200px; /* Đặt chiều cao cố định cho ảnh */
-`;
-
-const HeartIcon = styled.div`
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 24px;
-  color: white;
-`;
-
-const Countdown = styled.div`
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  background-color: #fff;
-  border-radius: 4px;
-  padding: 4px 8px;
-  color: red;
-  font-weight: bold;
-`;
-
-const ContentContainer = styled.div`
-  padding: 16px;
-`;
-
-const TourTitle = styled.h2`
-  font-size: 18px;
-  color: #333;
-  margin: 0;
-`;
-
-const InfoText = styled.p`
-  font-size: 14px;
-  color: #666;
-  margin: 4px 0;
-  display: flex;
-  align-items: center;
-
-  & span {
-    font-weight: bold;
-    color: #007bff;
-  }
-`;
-
-const PriceContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 16px;
-`;
-
-const OriginalPrice = styled.span`
-  font-size: 14px;
-  text-decoration: line-through;
-  color: #999;
-`;
-
-const DiscountedPrice = styled.span`
-  font-size: 19px;
-  color: red;
-  font-weight: bold;
-`;
-
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: red;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-`;
+import { useGetToursQuery } from '../../store/api/tourapi'; // Đảm bảo đường dẫn chính xác tới file `tourapi.ts`
 
 const TourCard: React.FC = () => {
-  const tour: Tour = {
-    tour_id: 1,
-    tour_name: 'Tour Hà Nội - Sapa',
-    description: 'Tour du lịch khám phá Sapa với các điểm đến nổi tiếng.',
-    duration: '3 ngày 2 đêm',
-    price_range: '500.000 đ - 1.000.000 đ',
-    max_participants: 20,
-    location_id: 1,
-    tour_type_id: 1,
-    created_at: '2024-11-01',
-    updated_at: '2024-11-02',
-    imageUrl: '/hanoi.jpg', // Link ảnh ví dụ
-    countdownTime: '3 ngày còn lại',
-    code: 'SA-12345',
-    departureCity: 'Hà Nội',
-    departureDate: '2024-11-10',
-    seatsAvailable: 12,
-    originalPrice: 1500000,
-    discountedPrice: 1200000
-  };
+  // Gọi hook `useGetToursQuery` để lấy dữ liệu từ API
+  const { data: tours, error, isLoading } = useGetToursQuery();
 
+  // Kiểm tra trạng thái đang tải dữ liệu
+  if (isLoading) {
+    return <p>Đang tải dữ liệu...</p>;
+  }
+
+  // Kiểm tra nếu có lỗi xảy ra khi gọi API
+  if (error) {
+    return <p>Có lỗi xảy ra khi tải dữ liệu tour.</p>;
+  }
+
+  // Hiển thị dữ liệu từ API
   return (
-    <CardContainer>
-      <ImageContainer>
-        <Image
-          src={tour.imageUrl}
-          alt={tour.tour_name}
-          layout="fill" // Điều chỉnh ảnh để tự động thay đổi kích thước theo container
-          objectFit="cover" // Đảm bảo ảnh luôn phủ đầy không gian
-        />
-        <HeartIcon>❤️</HeartIcon>
-        <Countdown>{tour.countdownTime}</Countdown>
-      </ImageContainer>
-      <ContentContainer>
-        <TourTitle>{tour.tour_name}</TourTitle>
-        <InfoText>
-          <span>Mã tour:</span> {tour.code}
-        </InfoText>
-        <InfoText>
-          <span>Khởi hành:</span> {tour.departureCity}
-        </InfoText>
-        <InfoText>
-          <span>Ngày khởi hành:</span> {tour.departureDate}
-        </InfoText>
-        <InfoText>
-          <span>Thời gian:</span> {tour.duration}
-        </InfoText>
-        <InfoText>
-          <span>Số chỗ còn nhận:</span> {tour.seatsAvailable}
-        </InfoText>
-        <PriceContainer>
-          <div>
-            <OriginalPrice>{tour.originalPrice.toLocaleString()} đ</OriginalPrice>
-            <br />
-            <DiscountedPrice>{tour.discountedPrice.toLocaleString()} đ</DiscountedPrice>
+    <div>
+      {tours && tours.length > 0 ? (
+        tours.map((tour) => (
+          <div key={tour.tour_id} className="card-container">
+            <h2>{tour.tour_name}</h2>
+            <p>{tour.description || 'Không có mô tả'}</p>
+            <p>Thời gian: {tour.duration || 'Không xác định'}</p>
+            <p>Khoảng giá: {tour.price_range || 'Không xác định'}</p>
+            <p>Số người tối đa: {tour.max_participants}</p>
+            {/* Thêm các chi tiết khác nếu cần */}
           </div>
-          <Button>Đặt ngay</Button>
-        </PriceContainer>
-      </ContentContainer>
-    </CardContainer>
+        ))
+      ) : (
+        <p>Không có tour nào hiện có.</p>
+      )}
+    </div>
   );
 };
 

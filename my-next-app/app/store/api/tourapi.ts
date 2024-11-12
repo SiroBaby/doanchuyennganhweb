@@ -120,6 +120,24 @@ export interface UpdateScheduleRequest {
   vehicle_id?: number;
 }
 
+export interface Review {
+  review_id: number;
+  tour_id: number;
+  user_id: number;
+  rating: number;
+  comment: string;
+  review_date: string;
+  created_at: string;
+}
+
+export interface TourResponses extends Tour {
+  Location: Location;
+  TourType: TourType;
+  TourImages: TourImage[];
+  TourSchedules: TourSchedule[];
+  Reviews?: Review[]; // Thêm phần review nếu cần
+}
+
 // API definition
 export const tourApi = createApi({
   reducerPath: 'tourApi',
@@ -224,4 +242,5 @@ export const {
   useGetAvailableVehiclesQuery,
   useUpdateScheduleMutation,
   useGetSchedulesByTourIdQuery,
+
 } = tourApi;
