@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import Image from 'next/image';
 
 // Định nghĩa interface Tour
 interface Tour {
@@ -133,35 +134,36 @@ const TourCard: React.FC = () => {
   return (
     <CardContainer>
       <ImageContainer>
-        <img
+        <Image
           src={tour.imageUrl}
           alt={tour.tour_name}
-          width="100%"
-          height="auto"
+          width="400"
+          height="200"
         />
         <HeartIcon>❤️</HeartIcon>
         <Countdown>{tour.countdownTime}</Countdown>
       </ImageContainer>
       <ContentContainer>
-        <TourTitle>{tour.tour_name}</TourTitle>
-        <InfoText>
+        <TourTitle className='dark:text-dark-text'>{tour.tour_name}</TourTitle>
+        <InfoText className='dark:text-dark-text'>
           <span>Mã tour:</span> {tour.code}
         </InfoText>
-        <InfoText>
+        <InfoText className='dark:text-dark-text'>
           <span>Khởi hành:</span> {tour.departureCity}
         </InfoText>
-        <InfoText>
+        <InfoText className='dark:text-dark-text'>
           <span>Ngày khởi hành:</span> {tour.departureDate}
         </InfoText>
-        <InfoText>
+        <InfoText className='dark:text-dark-text'>
           <span>Thời gian:</span> {tour.duration}
         </InfoText>
-        <InfoText>
+        <InfoText className='dark:text-dark-text'>
           <span>Số chỗ còn nhận:</span> {tour.seatsAvailable}
         </InfoText>
         <PriceContainer>
           <div>
             <OriginalPrice>{tour.originalPrice.toLocaleString()} đ</OriginalPrice>
+            <br />
             <DiscountedPrice>{tour.discountedPrice.toLocaleString()} đ</DiscountedPrice>
           </div>
           <Button>Đặt ngay</Button>
