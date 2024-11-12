@@ -57,66 +57,53 @@ const SearchButton = styled.button`
 
 const SearchForm: React.FC = () => {
   const [location, setLocation] = useState('Viet Nam');
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
-  const [guests, setGuests] = useState(2);
+  const [month, setMonth] = useState('');
+  const [price, setPrice] = useState('');
 
   const handleSearch = () => {
     console.log({
       location,
-      checkIn,
-      checkOut,
-      guests,
+      month,
+      price,
     });
   };
 
   return (
     <Container>
       <InputContainer>
-        <Label>Location:</Label>
+        <Label>Địa điểm:</Label>
         <Input
           type="text"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter location"
+          placeholder="Nhập địa điểm"
         />
       </InputContainer>
 
       <Divider />
 
       <InputContainer>
-        <Label>Check In</Label>
+        <Label>Theo tháng:</Label>
         <Input
-          type="date"
-          value={checkIn}
-          onChange={(e) => setCheckIn(e.target.value)}
+          type="month"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
         />
       </InputContainer>
 
       <Divider />
 
       <InputContainer>
-        <Label>Check Out</Label>
+        <Label>Giá cả:</Label>
         <Input
-          type="date"
-          value={checkOut}
-          onChange={(e) => setCheckOut(e.target.value)}
+          type="text"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Nhập giá"
         />
       </InputContainer>
 
-      <Divider />
-
-      <InputContainer>
-        <Label>Guests</Label>
-        <Input
-          type="number"
-          min={1}
-          value={guests}
-          onChange={(e) => setGuests(parseInt(e.target.value))}
-        />
-      </InputContainer>
-
-      <SearchButton onClick={handleSearch}>Search</SearchButton>
+      <SearchButton onClick={handleSearch}>Tìm kiếm</SearchButton>
     </Container>
   );
 };

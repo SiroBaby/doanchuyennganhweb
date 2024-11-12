@@ -1,8 +1,8 @@
 "use client";
 import AnotherTopBar from '../component/layout/AnotherTopBar';
+import Footer from '../component/layout/Footer';
 import SearchForm from '../component/layout/SearchForm';
 import TourCard from '../component/layout/TourCard';
-import Footer from '../component/layout/Footer';
 import "../globals.css";
 
 const HomePage: React.FC = () => {
@@ -36,7 +36,7 @@ const HomePage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="transform hover:scale-105 transition duration-300">
-                  <TourCard />
+                  <TourCard/>
                 </div>
               ))}
             </div>
@@ -48,7 +48,7 @@ const HomePage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {[...Array(5)].map((_, index) => (
                 <div key={index} className="transform hover:scale-105 transition duration-300">
-                  <TourCard />
+                  <TourCard/>
                 </div>
               ))}
             </div>
