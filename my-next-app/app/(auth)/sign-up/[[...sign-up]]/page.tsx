@@ -6,9 +6,7 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-blue-100">
       <div className="bg-white rounded-3xl shadow-xl p-10 flex justify-center items-center space-x-10">
-        {/* Left Side: Image and Text */}
         <div className="flex flex-col items-center h-full justify-center">
-          {/* Sử dụng Image từ Next.js */}
           <Image
             src="/reg-pic.jpeg"
             alt="Travel"
