@@ -142,12 +142,8 @@ webhookRouter.post('/webhooks', async (req: Request, res: Response) => {
     }
 
     if (evt.type === 'user.deleted') {
-      await prisma.user.update({
+      await prisma.user.delete({
         where: { user_id: evt.data.id.toString() },
-        data: {
-            status: 'DELETED',
-            deleted_at: new Date(),
-        },
       });
       console.log('User deleted successfully:', evt.data.id);
     }
