@@ -206,7 +206,7 @@ export const tourApi = createApi({
         params: { input: tourId }
       }),
       transformResponse: (response: ApiResponse<TourSchedule[]>) => response.result.data,
-      providesTags: (result, error, id) => [{ type: 'Tour', id }],
+      providesTags: (_result, _error, id) => [{ type: 'Tour', id }],
     }),
   }),
 });
