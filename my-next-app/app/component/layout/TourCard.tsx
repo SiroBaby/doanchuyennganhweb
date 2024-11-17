@@ -116,6 +116,7 @@ const Button = styled.button`
   cursor: pointer;
 `;
 
+// app/component/layout/TourCard.tsx
 const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
   const defaultImage = '/default-tour.jpg';
   
@@ -124,8 +125,8 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
       return defaultImage;
     }
     try {
-      const imageUrl = tour.TourImages[0].image_url;
-      return `http://localhost:4000/${imageUrl.replace(/^\//, '')}`;
+      // Cloudinary URL đã là URL đầy đủ
+      return tour.TourImages[0].image_url;
     } catch (error) {
       console.error('Error processing image URL:', error);
       return defaultImage;

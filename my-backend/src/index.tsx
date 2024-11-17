@@ -9,6 +9,7 @@ import multer from 'multer';
 import path from 'path';
 import { Webhook } from 'svix';
 import { z } from 'zod';
+import { v2 as cloudinary } from 'cloudinary';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -618,12 +619,46 @@ app.use((req, res, next) => {
 // Serve static files from img directory
 app.use('/img', express.static(path.join(__dirname, '../img')));
 
-// Add image upload endpoint
-app.post('/api/upload', upload.array('images'), (req, res) => {
+// Cấu hình cloudinary
+cloudinary.config({
+  cloud_name: 'dzjcbikrl',
+  api_key: '191154734859175', 
+  api_secret: process.env.CLOUDINARY_SECRET
+});
+
+// Cấu hình multer để xử lý upload
+const memoryUpload = multer({
+  storage: multer.memoryStorage()
+});
+
+// Upload endpoint
+app.post('/api/upload', memoryUpload.array('images'), async (req, res) => {
   try {
     const files = req.files as Express.Multer.File[];
-    const imageUrls = files.map(file => `/img/${file.filename}`);
+    
+    const uploadPromises = files.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        // Tạo stream để upload
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: 'tours',
+            resource_type: 'auto',
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else if (result) resolve(result.secure_url);
+            else reject(new Error('Upload failed: result is undefined'));
+          }
+        );
+
+        // Pipe buffer vào stream
+        uploadStream.end(file.buffer);
+      });
+    });
+
+    const imageUrls = await Promise.all(uploadPromises);
     res.json({ imageUrls });
+
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });

@@ -470,7 +470,7 @@ const EditTourPage = () => {
                   {tour?.TourImages.filter(img => !imagesToDelete.includes(img.image_id)).map((image) => (
                     <Box key={image.image_id} className="relative">
                       <Image
-                        src={`http://localhost:4000${image.image_url}`}
+                        src={image.image_url}
                         alt="Tour image"
                         width={200}
                         height={150}

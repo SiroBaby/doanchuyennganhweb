@@ -121,7 +121,7 @@ const TourDetailPage = () => {
                         {tour.TourImages.length > 0 && (
                             <Box flex={1} className="relative w-full h-96">
                                 <Image
-                                    src={`https://doanchuyennganhweb.onrender.com${tour.TourImages[currentImage].image_url}`}
+                                    src={tour.TourImages[currentImage].image_url}
                                     alt={tour.tour_name}
                                     layout="fill"
                                     objectFit="contain"

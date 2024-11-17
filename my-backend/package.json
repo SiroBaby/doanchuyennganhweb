@@ -17,10 +17,12 @@
     "@trpc/server": "^10.45.2",
     "@types/multer": "^1.4.12",
     "bcrypt": "^5.1.1",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.11.3",
     "svix": "^1.37.0",
     "zod": "^3.23.8"
