@@ -135,6 +135,74 @@ app.get("/vnpay-return", (req: Request, res: Response) => {
   }
 });
 
+// Add IPN handler
+app.post("/vnpay-ipn", (req: Request, res: Response) => {
+  const vnp_Params = req.body;
+  const vnp_HashSecret = process.env.VNP_HASH_SECRET || "";
+
+  let orderId = vnp_Params['vnp_TxnRef'];
+  let rspCode = vnp_Params['vnp_ResponseCode'];
+
+  // Get VNPAY's secure hash
+  const vnp_SecureHash = vnp_Params['vnp_SecureHash'];
+  delete vnp_Params['vnp_SecureHash'];
+  delete vnp_Params['vnp_SecureHashType'];
+
+  // Sort parameters
+  const sortedParams = Object.keys(vnp_Params)
+    .sort()
+    .reduce((acc, key) => {
+      if (vnp_Params[key] !== "" && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
+        acc[key] = vnp_Params[key];
+      }
+      return acc;
+    }, {} as { [key: string]: string });
+
+  // Create query string
+  const signData = Object.keys(sortedParams)
+    .map(key => `${key}=${sortedParams[key]}`)
+    .join('&');
+
+  // Create signature
+  const hmac = crypto.createHmac('sha512', vnp_HashSecret);
+  const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+
+  let paymentStatus = '0';
+  let checkOrderId = true; // Mã đơn hàng "giá trị của vnp_TxnRef" VNPAY phản hồi tồn tại trong CSDL của bạn
+  let checkAmount = true; // Kiểm tra số tiền "giá trị của vnp_Amout/100" trùng khớp với số tiền của đơn hàng trong CSDL của bạn
+  if(vnp_SecureHash === signed){ //kiểm tra checksum
+      if(checkOrderId){
+          if(checkAmount){
+              if(paymentStatus=="0"){ //kiểm tra tình trạng giao dịch trước khi cập nhật tình trạng thanh toán
+                  if(rspCode=="00"){
+                      //thanh cong
+                      //paymentStatus = '1'
+                      // Ở đây cập nhật trạng thái giao dịch thanh toán thành công vào CSDL của bạn
+                      res.status(200).json({RspCode: '00', Message: 'Success'})
+                  }
+                  else {
+                      //that bai
+                      //paymentStatus = '2'
+                      // Ở đây cập nhật trạng thái giao dịch thanh toán thất bại vào CSDL của bạn
+                      res.status(200).json({RspCode: '00', Message: 'Success'})
+                  }
+              }
+              else{
+                  res.status(200).json({RspCode: '02', Message: 'This order has been updated to the payment status'})
+              }
+          }
+          else{
+              res.status(200).json({RspCode: '04', Message: 'Amount invalid'})
+          }
+      }       
+      else {
+          res.status(200).json({RspCode: '01', Message: 'Order not found'})
+      }
+  }
+  else {
+      res.status(200).json({RspCode: '97', Message: 'Checksum failed'})
+  }
+});
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, '../img');
 if (!fs.existsSync(uploadDir)) {
