@@ -4,7 +4,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
 
-        const response = await fetch("http://localhost:4000/create-payment-url", {
+        const response = await fetch("https://doanchuyennganhweb.onrender.com/create-payment-url", {
             // Thay URL này bằng URL backend của bạn
             method: "POST",
             headers: {
