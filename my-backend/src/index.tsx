@@ -8,8 +8,9 @@ import fs from 'fs';
 import multer from 'multer';
 import path from 'path';
 import { Webhook } from 'svix';
-import { z } from 'zod';
+import { number, z } from 'zod';
 import { v2 as cloudinary } from 'cloudinary';
+import crypto from 'crypto';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -17,6 +18,122 @@ const t = initTRPC.create();
 const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
+
+//Thêm thanh toán VNPAY
+function formatVNPayDateTime(date: Date): string {
+  // Convert to Vietnam timezone (GMT+7)
+  const vietnamTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+  
+  return vietnamTime.getUTCFullYear() +
+    String(vietnamTime.getUTCMonth() + 1).padStart(2, '0') +
+    String(vietnamTime.getUTCDate()).padStart(2, '0') +
+    String(vietnamTime.getUTCHours()).padStart(2, '0') +
+    String(vietnamTime.getUTCMinutes()).padStart(2, '0') +
+    String(vietnamTime.getUTCSeconds()).padStart(2, '0');
+}
+
+function createVNPayUrl(orderId: string, amount: number, orderInfo: string, returnUrl: string, ipAddr: string) {
+  const vnp_TmnCode = process.env.VNP_TMN_CODE || "";
+  const vnp_HashSecret = process.env.VNP_HASH_SECRET || "";
+  const vnp_Url = process.env.VNP_URL || "";
+
+  const now = new Date();
+  const createDate = formatVNPayDateTime(now);
+  const expireDate = formatVNPayDateTime(new Date(now.getTime() + 15 * 60 * 1000));
+
+  // Tạo đối tượng chứa parameters
+  const vnp_Params: { [key: string]: string } = {
+    vnp_Version: "2.1.0",
+    vnp_Command: "pay",
+    vnp_TmnCode: vnp_TmnCode,
+    vnp_Amount: (amount * 100).toString(),
+    vnp_CreateDate: createDate,
+    vnp_CurrCode: "VND",
+    vnp_IpAddr: ipAddr,
+    vnp_Locale: "vn",
+    vnp_OrderInfo: orderInfo,
+    vnp_OrderType: "other",
+    vnp_ReturnUrl: returnUrl,
+    vnp_ExpireDate: expireDate,
+    vnp_TxnRef: orderId
+  };
+
+  // Sắp xếp các tham số theo thứ tự a-z
+  const sortedParams = Object.keys(vnp_Params)
+    .sort()
+    .reduce((acc, key) => {
+      if (vnp_Params[key] !== "" && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
+        acc[key] = vnp_Params[key];
+      }
+      return acc;
+    }, {} as { [key: string]: string });
+
+  // Tạo chuỗi query từ các tham số đã sắp xếp
+  const queryString = new URLSearchParams(sortedParams).toString();
+
+  // Tạo chữ ký
+  const hmac = crypto.createHmac('sha512', vnp_HashSecret);
+  const signed = hmac.update(Buffer.from(queryString, 'utf-8')).digest('hex');
+
+  // Tạo URL cuối cùng
+  return `${vnp_Url}?${queryString}&vnp_SecureHash=${signed}`;
+}
+
+// API tạo URL thanh toán
+app.post("/create-payment-url", (req: Request, res: Response) => {
+  const { orderId, amount, orderInfo, ipAddr } = req.body;
+
+  if (!orderId || !amount || !orderInfo || !ipAddr) {
+      return res.status(400).json({ success: false, message: "Missing parameters" });
+  }
+
+  const returnUrl = process.env.VNP_RETURN_URL || "";
+
+  const paymentUrl = createVNPayUrl(orderId, amount, orderInfo, returnUrl, ipAddr);
+
+  res.status(200).json({ success: true, paymentUrl });
+});
+
+app.get("/vnpay-return", (req: Request, res: Response) => {
+  const vnp_Params = req.query;
+  const vnp_HashSecret = process.env.VNP_HASH_SECRET || "";
+
+  // Lấy chữ ký từ VNPay
+  const vnp_SecureHash = vnp_Params['vnp_SecureHash'] as string;
+  delete vnp_Params['vnp_SecureHash'];
+  delete vnp_Params['vnp_SecureHashType'];
+
+  // Sắp xếp các tham số theo thứ tự a-z
+  const sortedParams = Object.keys(vnp_Params)
+    .sort()
+    .reduce((acc, key) => {
+      if (vnp_Params[key] !== "" && vnp_Params[key] !== null && vnp_Params[key] !== undefined) {
+        acc[key] = vnp_Params[key] as string;
+      }
+      return acc;
+    }, {} as { [key: string]: string });
+
+  // Tạo chuỗi query từ các tham số đã sắp xếp
+  const queryString = new URLSearchParams(sortedParams).toString();
+
+  // Tạo chữ ký để so sánh
+  const hmac = crypto.createHmac("sha512", vnp_HashSecret);
+  const signed = hmac.update(Buffer.from(queryString, 'utf-8')).digest('hex');
+
+  // So sánh chữ ký
+  if (signed === vnp_SecureHash) {
+    res.status(200).json({
+      success: true,
+      message: "Payment successful",
+      data: vnp_Params
+    });
+  } else {
+    res.status(400).json({
+      success: false,
+      message: "Invalid signature"
+    });
+  }
+});
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, '../img');
