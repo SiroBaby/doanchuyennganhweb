@@ -1,27 +1,25 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
-import React, { useState } from 'react';
+import { useDeleteTourMutation, useGetSchedulesByTourIdQuery, useGetTourByIdQuery } from '@/app/store/api/tourapi';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import {
+    Box,
     Card,
     CardContent,
-    Typography,
-    Box,
+    CircularProgress,
     IconButton,
     List,
     ListItem,
     ListItemText,
-    Divider,
-    CircularProgress,
+    Typography
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import StarIcon from '@mui/icons-material/Star';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import Image from 'next/image';
-import { useRouter, useParams } from 'next/navigation';
-import { useGetTourByIdQuery, useDeleteTourMutation, useGetSchedulesByTourIdQuery } from '@/app/store/api/tourapi';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const TourDetailPage = () => {
     const router = useRouter();
