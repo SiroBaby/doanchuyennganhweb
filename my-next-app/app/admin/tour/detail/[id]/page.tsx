@@ -161,7 +161,7 @@ const TourDetailPage = () => {
                     <Box mt={4} className="bg-gray-50 dark:bg-dark-sidebar rounded-lg p-4">
                         <Typography variant="h5" className="!font-bold !text-gray-800 dark:!text-gray-200 flex items-center">
                             <CalendarTodayIcon className="mr-2" />
-                            Lịch trình
+                            Ngày Khởi Hành
                         </Typography>
                         {schedules.length > 0 ? (
                             <List>
@@ -197,7 +197,7 @@ const TourDetailPage = () => {
                             </List>
                         ) : (
                             <Typography className="!text-gray-700 dark:!text-gray-300 italic">
-                                Chưa có lịch trình nào được thêm vào
+                                Chưa có ngày khởi hành nào được thêm vào
                             </Typography>
                         )}
                     </Box>

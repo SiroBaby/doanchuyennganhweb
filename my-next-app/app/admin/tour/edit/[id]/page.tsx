@@ -196,7 +196,7 @@ const EditTourPage = () => {
       setNewSchedules([]);
     } catch (error) {
       console.error('Error saving schedules:', error);
-      alert('Không thể lưu lịch trình. Vui lòng thử lại.');
+      alert('Không thể lưu ngày khởi hành . Vui lòng thử lại.');
     }
   };
 
@@ -357,10 +357,10 @@ const EditTourPage = () => {
         status: schedule.status,
         vehicle_id: schedule.VehicleAssignments?.[0]?.vehicle_id
       }).unwrap();
-      alert('Cập nhật lịch trình thành công');
+      alert('Cập nhật ngày khởi hành thành công');
     } catch (error) {
       console.error('Error updating schedule:', error);
-      alert('Không thể cập nhật lịch trình');
+      alert('Không thể cập nhật ngày khởi hành');
     }
   };
 
@@ -524,7 +524,7 @@ const EditTourPage = () => {
             {/* Existing Schedules Management Section */}
             <Box mt={4}>
               <Typography variant="h6" gutterBottom>
-                Lịch trình hiện tại
+                Ngày khởi hành hiện tại
               </Typography>
               {existingSchedules?.length > 0 ? ( // Add null check and length check
                 existingSchedules.map((schedule) => (
@@ -605,7 +605,7 @@ const EditTourPage = () => {
                           variant="contained"
                           onClick={() => handleUpdateExistingSchedule(schedule)}
                         >
-                          Cập nhật lịch trình
+                          Cập nhật ngày khởi hành
                         </Button>
                       </Grid>
                     </Grid>
@@ -613,7 +613,7 @@ const EditTourPage = () => {
                 ))
               ) : (
                 <Typography color="textSecondary">
-                  Chưa có lịch trình nào.
+                  Chưa có ngày khởi hành nào.
                 </Typography>
               )}
             </Box>
@@ -621,13 +621,13 @@ const EditTourPage = () => {
             {/* Schedule Management Section */}
             <Box mt={4}>
               <Typography variant="h6" gutterBottom>
-                Quản lý lịch trình
+                Quản lý ngày khởi hành
               </Typography>
               
               {newSchedules.map((schedule, index) => (
                 <Paper key={index} className="p-4 mb-4">
                   <Box className="flex justify-between items-center mb-4">
-                    <Typography variant="subtitle1">Lịch Trình {index + 1}</Typography>
+                    <Typography variant="subtitle1">Ngày khởi hành {index + 1}</Typography>
                     <IconButton 
                       color="error" 
                       onClick={() => setNewSchedules(prev => prev.filter((_, i) => i !== index))}
@@ -727,7 +727,7 @@ const EditTourPage = () => {
                   onClick={handleAddNewSchedule}
                   startIcon={<AddIcon />}
                 >
-                  Thêm Lịch Trình
+                  Thêm Ngày Khởi Hành
                 </Button>
                 {newSchedules.length > 0 && (
                   <Button 
@@ -735,7 +735,7 @@ const EditTourPage = () => {
                     color="secondary"
                     onClick={handleSaveSchedules}
                   >
-                    Lưu Lịch Trình
+                    Lưu Ngày Khởi Hành
                   </Button>
                 )}
               </Box>

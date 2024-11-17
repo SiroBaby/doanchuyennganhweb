@@ -17,13 +17,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 const OrderPage = () => {
   // Sample order data
   const orders = [
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
-    { id: 1, userId: 'User', amount: 3000000, date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
+    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
   ];
 
   return (
@@ -46,7 +46,10 @@ const OrderPage = () => {
                         UserID
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        Amount
+                        VehicleID
+                      </TableCell>
+                      <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
+                        ScheduleID
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
                         Date
@@ -69,7 +72,10 @@ const OrderPage = () => {
                           {order.userId}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.amount.toLocaleString()}
+                          {order.vehicleID}
+                        </TableCell>
+                        <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
+                          {order.scheduleID}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           {order.date}
