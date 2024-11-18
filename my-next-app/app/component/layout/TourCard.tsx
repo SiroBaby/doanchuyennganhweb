@@ -1,4 +1,7 @@
+import { useGetSchedulesByTourIdQuery, useGetTourByIdQuery } from '@/app/store/api/tourapi';
+import { IconButton } from '@mui/material';
 import Image from 'next/image';
+import { useParams, useRouter } from 'next/navigation';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -31,17 +34,17 @@ interface TourImage {
 // Component
 const CardContainer = styled.div`
   width: 100%;
-  max-width: 300px; /* Điều chỉnh max-width để thẻ có kích thước tối đa */
+  max-width: 300px;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
   font-family: Arial, sans-serif;
-  margin: 0 5px 10px 5px; /* Thêm khoảng cách giữa các thẻ */
+  margin: 0 5px 10px 5px;
 `;
 
 const ImageContainer = styled.div`
   position: relative;
-  height: 200px; /* Đặt chiều cao cố định cho ảnh */
+  height: 200px;
 `;
 
 const HeartIcon = styled.div`
@@ -107,15 +110,27 @@ const DiscountedPrice = styled.span`
   font-weight: bold;
 `;
 
-const Button = styled.button`
-  padding: 8px 16px;
-  background-color: red;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-`;
+const TourDetail: React.FC = () => {
+  const params = useParams();
+  const tourId = Number(params.id);
 
+  const { data: tour, isLoading, error } = useGetTourByIdQuery(tourId);
+  const { data: schedules = [] } = useGetSchedulesByTourIdQuery(tourId);
+
+  if (isLoading) {
+    return <p>Loading...</p>;
+  }
+
+  if (error || !tour) {
+    return <p>Error loading tour details.</p>;
+  }
+
+  return (
+    <TourCard tour={tour} />
+  );
+};
+
+<<<<<<< HEAD
 // app/component/layout/TourCard.tsx
 const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
   const defaultImage = '/default-tour.jpg';
@@ -132,6 +147,10 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
       return defaultImage;
     }
   };
+=======
+const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
+  const router = useRouter();
+>>>>>>> phpagain
 
   return (
     <CardContainer>
@@ -141,9 +160,12 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
           alt={tour.tour_name}
           layout="fill"
           objectFit="cover"
+<<<<<<< HEAD
           onError={(e) => {
             e.currentTarget.src = defaultImage;
           }}
+=======
+>>>>>>> phpagain
         />
         <HeartIcon>❤️</HeartIcon>
       </ImageContainer>
@@ -164,11 +186,14 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
               {tour.price_range ? `${tour.price_range.toLocaleString()} VND` : 'Liên hệ'}
             </DiscountedPrice>
           </div>
-          <Button>Đặt ngay</Button>
+          {/* cái này để test thui nha */}
+          <IconButton onClick={() => router.push(`/admin/tour/edit/${tour.tour_id}`)}> 
+            Chi tiết
+          </IconButton>
         </PriceContainer>
       </ContentContainer>
     </CardContainer>
   );
 };
 
-export default TourCard;
+export default TourDetail;
