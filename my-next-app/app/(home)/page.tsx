@@ -1,10 +1,10 @@
 "use client";
+import { CircularProgress, Typography } from '@mui/material';
 import AnotherTopBar from '../component/layout/AnotherTopBar';
 import Footer from '../component/layout/Footer';
 import SearchForm from '../component/layout/SearchForm';
 import TourCard from '../component/layout/TourCard';
 import "../globals.css";
-import { CircularProgress, Typography } from '@mui/material';
 
 import { useGetToursQuery } from '../store/api/tourapi';
 
