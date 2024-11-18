@@ -121,7 +121,7 @@ const TourDetailPage = () => {
                         {tour.TourImages.length > 0 && (
                             <Box flex={1} className="relative w-full h-96">
                                 <Image
-                                    src={`https://doanchuyennganhweb.onrender.com${tour.TourImages[currentImage].image_url}`}
+                                    src={tour.TourImages[currentImage].image_url}
                                     alt={tour.tour_name}
                                     layout="fill"
                                     objectFit="contain"
@@ -161,7 +161,7 @@ const TourDetailPage = () => {
                     <Box mt={4} className="bg-gray-50 dark:bg-dark-sidebar rounded-lg p-4">
                         <Typography variant="h5" className="!font-bold !text-gray-800 dark:!text-gray-200 flex items-center">
                             <CalendarTodayIcon className="mr-2" />
-                            Lịch trình
+                            Ngày Khởi Hành
                         </Typography>
                         {schedules.length > 0 ? (
                             <List>
@@ -197,7 +197,7 @@ const TourDetailPage = () => {
                             </List>
                         ) : (
                             <Typography className="!text-gray-700 dark:!text-gray-300 italic">
-                                Chưa có lịch trình nào được thêm vào
+                                Chưa có ngày khởi hành nào được thêm vào
                             </Typography>
                         )}
                     </Box>
