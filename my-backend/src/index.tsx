@@ -1266,7 +1266,6 @@ async function sendBookingQRCode(bookingId: number, customerEmail: string, tourN
 
     <p style="margin: 20px 0;">Please use the QR code below to easily check your booking status:</p>
     <div style="text-align: center; margin: 20px 0;">
-        <!-- Ensure the QR code URL is valid -->
         <img 
             src="${qrCodeDataUrl}" 
             alt="Booking QR Code" 
