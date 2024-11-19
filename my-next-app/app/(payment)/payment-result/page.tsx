@@ -37,7 +37,6 @@ const PaymentResult = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             payment_status: paymentStatus,
-            booking_status: paymentStatus === 'COMPLETED' ? 'CONFIRMED' : 'CANCELLED'
           })
         });
 

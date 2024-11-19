@@ -871,7 +871,6 @@ const dashboardRouter = t.router({
             gte: today,
           },
           payment_status: 'COMPLETED',
-          booking_status: 'CONFIRMED'
         },
         _sum: {
           total_price: true,
@@ -915,7 +914,6 @@ const dashboardRouter = t.router({
             gte: new Date(today.getFullYear(), today.getMonth() - 5, 1),
           },
           payment_status: 'COMPLETED',
-          booking_status: 'CONFIRMED'
         },
         _sum: {
           total_price: true,
@@ -1356,17 +1354,15 @@ app.post('/api/invoices', async (req: Request, res: Response) => {
   }
 });
 
-// Update booking status endpoint
 app.patch('/api/bookings/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { payment_status, booking_status } = req.body;
+    const { payment_status } = req.body;
 
     const booking = await prisma.booking.update({
       where: { booking_id: Number(id) },
       data: { 
         payment_status,
-        booking_status 
       }
     });
 
