@@ -910,8 +910,8 @@ const dashboardRouter = t.router({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [todayEarnings, totalBookings, pendingTours, tourTypeStats, monthlyStats] = await Promise.all([
-      // Get today's earnings from completed bookings
+    const [todayEarnings, totalBookings, pendingTours, tourTypeStats, monthlyStatsRaw] = await Promise.all([
+      // Today's earnings
       prisma.booking.aggregate({
         where: {
           booking_date: {
@@ -924,24 +924,24 @@ const dashboardRouter = t.router({
         },
       }),
 
-      // Get total active bookings count
+      // Total bookings
       prisma.booking.count({
         where: {
           booking_status: {
-            notIn: ['CANCELLED']
-          }
-        }
+            notIn: ['CANCELLED'],
+          },
+        },
       }),
 
-      // Get pending tours count
+      // Pending tours
       prisma.booking.count({
         where: {
           booking_status: 'PENDING',
-          payment_status: 'PENDING'
-        }
+          payment_status: 'PENDING',
+        },
       }),
 
-      // Get tour type distribution
+      // Tour type stats
       prisma.$queryRaw`
         SELECT 
           t.tour_type_id,
@@ -953,24 +953,33 @@ const dashboardRouter = t.router({
         GROUP BY t.tour_type_id, tt.type_name
       `,
 
-      // Get monthly stats from completed bookings
-      prisma.booking.groupBy({
-        by: ['booking_date'],
-        where: {
-          booking_date: {
-            gte: new Date(today.getFullYear(), today.getMonth() - 5, 1),
-          },
-          payment_status: 'COMPLETED',
-        },
-        _sum: {
-          total_price: true,
-        },
-        _count: true,
-        orderBy: {
-          booking_date: 'asc'
-        }
-      }),
+      // Monthly stats using raw SQL query
+      prisma.$queryRaw`
+        SELECT 
+          DATE(b.booking_date) AS booking_date, -- Lấy ngày thay vì ngày giờ
+          SUM(b.total_price) AS total_income,
+          COUNT(*) AS total_tours
+        FROM Booking b
+        WHERE b.payment_status = 'COMPLETED'
+          AND b.booking_date >= ${new Date(today.getFullYear(), today.getMonth() - 5, 1)}
+        GROUP BY DATE(b.booking_date)
+        ORDER BY DATE(b.booking_date) ASC
+      `
     ]);
+
+    // Format monthlyStats
+    const monthlyStats = (monthlyStatsRaw as Array<{ booking_date: Date; total_income: bigint; total_tours: bigint }>).reduce(
+      (acc, stat) => {
+        const month = new Date(stat.booking_date).toLocaleString('default', { month: 'short' }); // Chuyển ngày thành tên tháng
+        if (!acc[month]) {
+          acc[month] = { income: 0, tours: 0 };
+        }
+        acc[month].income += Number(stat.total_income) || 0; // Chuyển BigInt sang Number
+        acc[month].tours += Number(stat.total_tours) || 0; // Chuyển BigInt sang Number
+        return acc;
+      },
+      {} as Record<string, { income: number; tours: number }>
+    );
 
     return {
       todayEarnings: Number(todayEarnings._sum.total_price) || 0,
@@ -981,20 +990,14 @@ const dashboardRouter = t.router({
         tour_type_id: stat.tour_type_id,
         TourType: {
           type_id: stat.tour_type_id,
-          type_name: stat.type_name
-        }
+          type_name: stat.type_name,
+        },
       })),
-      monthlyStats: monthlyStats.reduce((acc, stat) => {
-        const month = new Date(stat.booking_date).toLocaleString('default', { month: 'short' });
-        acc[month] = {
-          income: Number(stat._sum.total_price) || 0,
-          tours: stat._count,
-        };
-        return acc;
-      }, {} as Record<string, { income: number; tours: number }>),
+      monthlyStats,
     };
   }),
 });
+
 
 const appRouter = t.router({
   vehicle: vehicleRouter,

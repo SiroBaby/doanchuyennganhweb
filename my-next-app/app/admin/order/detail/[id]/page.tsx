@@ -19,7 +19,6 @@ import PersonIcon from '@mui/icons-material/Person';
 import EventIcon from '@mui/icons-material/Event';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
-import PaymentIcon from '@mui/icons-material/Payment';
 import { useGetOrderDetailsQuery } from '@/app/store/api/orderapi';
 import { useParams } from 'next/navigation';
 
@@ -83,6 +82,7 @@ const OrderDetailPage = () => {
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Tên: {invoiceData.user_name}</Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Email: {invoiceData.user_email}</Typography>
+              <Typography className="!text-gray-600 dark:!text-gray-400">Thông tin ghi danh: {invoiceData.booking.booking_status}</Typography>
             </Box>
             <Box>
               <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 flex items-center">
@@ -90,7 +90,7 @@ const OrderDetailPage = () => {
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Mã đặt tour: {invoiceData.booking_id}</Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Ngày đặt: {new Date(invoiceData.booking.booking_date).toLocaleDateString()}</Typography>
-              <Typography className="!text-gray-600 dark:!text-gray-400">Trạng thái: {invoiceData.booking.booking_status}</Typography>
+              <Typography className="!text-gray-600 dark:!text-gray-400">Trạng thái: {invoiceData.booking.payment_status}</Typography>
             </Box>
           </Box>
 
@@ -153,13 +153,6 @@ const OrderDetailPage = () => {
               </Table>
             </TableContainer>
           </Box>
-
-          <Box className="mb-6">
-            <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 mb-2 flex items-center">
-              <PaymentIcon className="mr-2" /> Lịch sử thanh toán
-            </Typography>
-          </Box>
-
           <Box className="flex justify-between items-center">
             <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 flex items-center">
               <AttachMoneyIcon className="mr-2" /> Tổng cộng: {formatCurrency(invoiceData.amount)}

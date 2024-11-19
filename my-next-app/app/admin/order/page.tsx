@@ -33,7 +33,7 @@ const OrderPage = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'CONFIRMED':
+      case 'COMPLETED':
         return 'success';
       case 'PENDING':
         return 'warning';
@@ -116,8 +116,8 @@ const OrderPage = () => {
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
                           <Chip 
-                            label={booking.booking_status}
-                            color={getStatusColor(booking.booking_status)}
+                            label={booking.payment_status}
+                            color={getStatusColor(booking.payment_status)}
                           />
                         </TableCell>
                         <TableCell>
