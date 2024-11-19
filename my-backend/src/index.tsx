@@ -1501,7 +1501,7 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
           total_price,
           special_requests,
           booking_status: 'PENDING',
-          payment_status: 'PENDING'
+          payment_status: 'COMPLETED'
         }
       });
 
@@ -1570,7 +1570,7 @@ app.post('/api/invoices', async (req: Request, res: Response) => {
         user_id,
         amount,
         date: new Date(),
-        payment_status: 'PENDING'
+        payment_status: 'COMPLETED'
       }
     });
 
