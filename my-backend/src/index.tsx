@@ -1441,7 +1441,7 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
   try {
     const { user_id, schedule_id, number_of_people, total_price, special_requests } = req.body;
     
-    console.log('Creating booking with data:', { user_id, schedule_id, number_of_people, total_price });
+    console.log('Creating booking with data:', req.body); // Debug log
 
     // Convert number_of_people to integer
     const numberOfPeople = parseInt(number_of_people);
@@ -1482,8 +1482,11 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
     });
 
     if (!user) {
+      console.error('User not found:', user_id); // Debug log
       return res.status(404).json({ error: 'User not found' });
     }
+
+    console.log('Found user:', user); // Debug log
 
     // Create booking using transaction to ensure data consistency
     const booking = await prisma.$transaction(async (prisma) => {
@@ -1515,21 +1518,30 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
       return newBooking;
     });
 
-    // Send QR code email after successful booking creation
+    // Add more detailed error handling for email sending
     try {
+      console.log('Attempting to send email to:', user.email); // Debug log
+      
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Email configuration missing');
+      }
+
       await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
-      console.log('QR code email sent successfully');
+      console.log('Email sent successfully'); // Debug log
     } catch (emailError) {
-      console.error('Failed to send QR code email:', emailError);
-      // Email failure shouldn't affect booking creation
-      // You might want to implement a retry mechanism or notification system here
+      console.error('Detailed email sending error:', emailError);
+      // Still return success but with a warning
+      return res.status(201).json({
+        ...booking,
+        warning: 'Booking created but email notification failed'
+      });
     }
 
     console.log('Booking created successfully:', booking);
     res.status(201).json(booking);
 
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('Detailed booking error:', error);
     res.status(500).json({ 
       error: 'Could not create booking',
       details: error instanceof Error ? error.message : 'Unknown error'
