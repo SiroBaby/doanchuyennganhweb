@@ -36,6 +36,7 @@ interface Review {
 
 const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }) => {
   const router = useRouter();
+  const { userId, isLoaded } = useAuth();
   const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
 
   const handleBooking = () => {
@@ -91,7 +92,7 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
         <button 
           onClick={handleBooking}
           className="w-full bg-black py-2 rounded hover:bg-gray-800 transition-colors disabled:bg-gray-500"
-          disabled={!selectedSchedule}
+          disabled={!selectedSchedule || !userId || !isLoaded}
         >
           ĐẶT TOUR
         </button>
