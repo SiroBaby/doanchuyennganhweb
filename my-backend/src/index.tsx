@@ -1359,7 +1359,10 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
 
     // Check if schedule exists and has enough slots
     const schedule = await prisma.tourSchedule.findUnique({
-      where: { schedule_id }
+      where: { schedule_id },
+      include: {
+        Tour: true // Include Tour data for email
+      }
     });
 
     if (!schedule) {
@@ -1379,6 +1382,15 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No vehicle assigned to this schedule' });
     }
 
+    // Get user email for sending QR code
+    const user = await prisma.user.findUnique({
+      where: { user_id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     // Create booking using transaction to ensure data consistency
     const booking = await prisma.$transaction(async (prisma) => {
       // Create the booking
@@ -1388,7 +1400,7 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
           schedule_id,
           assignment_id: vehicleAssignment.assignment_id,
           booking_date: new Date(),
-          number_of_people: numberOfPeople, // Use the converted integer value
+          number_of_people: numberOfPeople,
           total_price,
           special_requests,
           booking_status: 'PENDING',
@@ -1401,13 +1413,23 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
         where: { schedule_id },
         data: {
           available_slots: {
-            decrement: numberOfPeople  // Use the converted integer value
+            decrement: numberOfPeople
           }
         }
       });
 
       return newBooking;
     });
+
+    // Send QR code email after successful booking creation
+    try {
+      await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
+      console.log('QR code email sent successfully');
+    } catch (emailError) {
+      console.error('Failed to send QR code email:', emailError);
+      // Email failure shouldn't affect booking creation
+      // You might want to implement a retry mechanism or notification system here
+    }
 
     console.log('Booking created successfully:', booking);
     res.status(201).json(booking);
