@@ -2,17 +2,17 @@ import { PrismaClient } from '@prisma/client';
 import { initTRPC } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import bodyParser from 'body-parser';
+import { v2 as cloudinary } from 'cloudinary';
 import cors from 'cors';
+import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import fs from 'fs';
 import multer from 'multer';
+import nodemailer from 'nodemailer';
 import path from 'path';
+import QRCode from 'qrcode';
 import { Webhook } from 'svix';
 import { z } from 'zod';
-import { v2 as cloudinary } from 'cloudinary';
-import crypto from 'crypto';
-import nodemailer from 'nodemailer';
-import QRCode from 'qrcode';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -1252,12 +1252,41 @@ async function sendBookingQRCode(bookingId: number, customerEmail: string, tourN
       to: customerEmail,
       subject: 'Booking Confirmation QR Code',
       html: `
-        <h1>Thank you for booking with us!</h1>
-        <h2>Tour: ${tourName}</h2>
-        <p>Your booking ID is: ${bookingId}</p>
-        <p>Please use this QR code to check your booking status:</p>
-        <img src="${qrCodeDataUrl}" alt="Booking QR Code"/>
-        <p>Or click this link: <a href="${bookingUrl}">${bookingUrl}</a></p>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <h1 style="color: #333; text-align: center;">🎉 Thank You for Booking with Us! 🎉</h1>
+    <h2 style="color: #555; text-align: center;">Your Adventure Awaits!</h2>
+    
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    
+    <h3 style="color: #333;">Booking Details</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><strong>Tour Name:</strong> ${tourName}</li>
+        <li><strong>Booking ID:</strong> ${bookingId}</li>
+    </ul>
+
+    <p style="margin: 20px 0;">Please use the QR code below to easily check your booking status:</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img src="${qrCodeDataUrl}" alt="Booking QR Code" style="max-width: 200px; border: 1px solid #ddd; padding: 5px; border-radius: 5px;"/>
+    </div>
+    <p style="text-align: center;">Or click the link below for more details:</p>
+    <p style="text-align: center;">
+        <a href="${bookingUrl}" style="color: #007BFF; text-decoration: none;">${bookingUrl}</a>
+    </p>
+    
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    
+    <h3 style="color: #333;">Need Assistance?</h3>
+    <p>If you have any questions or need further support, feel free to contact us:</p>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><strong>Email:</strong> support@example.com</li>
+        <li><strong>Phone:</strong> +123 456 789</li>
+        <li><strong>Working Hours:</strong> Mon-Fri, 9 AM - 6 PM</li>
+    </ul>
+    
+    <p style="margin: 20px 0; text-align: center;">We look forward to seeing you on the tour!</p>
+    <p style="text-align: center; color: #777; font-size: 0.9em;">© 2024 Your Travel Company. All Rights Reserved.</p>
+</div>
+
       `,
       attachments: [{
         filename: 'booking-qr.png',
