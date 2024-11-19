@@ -465,6 +465,18 @@ const TourRouter = t.router({
           Location: true,
           TourType: true,
           TourImages: true,
+          Reviews: {
+            include: {
+              User: {
+                select: {
+                  full_name: true
+                }
+              }
+            },
+            orderBy: {
+              created_at: 'desc'
+            }
+          }
         }
       });
       if (!tour) {
@@ -693,6 +705,32 @@ const TourRouter = t.router({
       return schedule;
     }),
 
+  getReviewsByTourId: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      try {
+        const reviews = await prisma.review.findMany({
+          where: {
+            tour_id: input
+          },
+          include: {
+            User: {
+              select: {
+                full_name: true
+              }
+            }
+          },
+          orderBy: {
+            created_at: 'desc'
+          }
+        });
+        return reviews;
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+        throw new Error('Không thể lấy đánh giá');
+      }
+    }),
+
   deleteSchedule: t.procedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
@@ -791,6 +829,136 @@ const appRouter = t.router({
   tour: TourRouter,
   location: locationRouter,
   tourType: tourTypeRouter,
+  getScheduleById: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      try {
+        const schedule = await prisma.tourSchedule.findUnique({
+          where: { schedule_id: input },
+          include: {
+            Tour: {
+              select: {
+                tour_name: true,
+              }
+            },
+            VehicleAssignments: {
+              include: {
+                Vehicle: true
+              }
+            }
+          }
+        });
+        
+        if (!schedule) {
+          throw new Error('Schedule not found');
+        }
+
+        return schedule;
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+        throw new Error('Could not fetch schedule');
+      }
+    }),
+
+  createBooking: t.procedure
+    .input(z.object({
+      user_id: z.string(),
+      schedule_id: z.number(),
+      number_of_people: z.number(),
+      total_price: z.number(),
+      special_requests: z.string().optional(),
+      booking_status: z.string(),
+      payment_status: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Get the vehicle assignment for this schedule
+        const vehicleAssignment = await prisma.vehicleAssignment.findFirst({
+          where: { schedule_id: input.schedule_id }
+        });
+
+        if (!vehicleAssignment) {
+          throw new Error('No vehicle assigned to this schedule');
+        }
+
+        // Create booking with the vehicle assignment
+        const booking = await prisma.booking.create({
+          data: {
+            user_id: input.user_id,
+            schedule_id: input.schedule_id,
+            assignment_id: vehicleAssignment.assignment_id,
+            booking_date: new Date(),
+            number_of_people: input.number_of_people,
+            total_price: input.total_price,
+            special_requests: input.special_requests,
+            booking_status: input.booking_status,
+            payment_status: input.payment_status
+          }
+        });
+
+        // Update available slots in schedule
+        await prisma.tourSchedule.update({
+          where: { schedule_id: input.schedule_id },
+          data: {
+            available_slots: {
+              decrement: input.number_of_people
+            }
+          }
+        });
+
+        return booking;
+      } catch (error) {
+        console.error('Error creating booking:', error);
+        throw new Error('Could not create booking');
+      }
+    }),
+
+  updateBookingStatus: t.procedure
+    .input(z.object({
+      booking_id: z.number(),
+      payment_status: z.string(),
+      booking_status: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      return prisma.booking.update({
+        where: { booking_id: input.booking_id },
+        data: {
+          payment_status: input.payment_status,
+          booking_status: input.booking_status
+        }
+      });
+    }),
+
+  createInvoice: t.procedure
+    .input(z.object({
+      booking_id: z.number(),
+      user_id: z.string(),
+      amount: z.number(),
+      payment_status: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      return prisma.invoice.create({
+        data: {
+          booking_id: input.booking_id,
+          user_id: input.user_id,
+          amount: input.amount,
+          date: new Date(),
+          payment_status: input.payment_status
+        }
+      });
+    }),
+
+  updateInvoiceStatus: t.procedure
+    .input(z.object({
+      booking_id: z.number(),
+      payment_status: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      return prisma.invoice.updateMany({
+        where: { booking_id: input.booking_id },
+        data: { payment_status: input.payment_status }
+      });
+    })
 });
 
 app.use(cors());
@@ -847,6 +1015,216 @@ app.post('/api/upload', memoryUpload.array('images'), async (req, res) => {
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
+app.post('/api/reviews', async (req: Request, res: Response) => {
+  try {
+    const { tour_id, user_id, rating, comment } = req.body;
+
+    const review = await prisma.review.create({
+      data: {
+        tour_id: Number(tour_id),
+        user_id: user_id,
+        rating: Number(rating),
+        comment: comment,
+        review_date: new Date(),
+        created_at: new Date(),
+      },
+      include: {
+        User: {
+          select: {
+            full_name: true
+          }
+        }
+      }
+    });
+
+    res.status(200).json({ success: true, data: review });
+  } catch (error) {
+    console.error('Error creating review:', error);
+    res.status(500).json({ success: false, message: 'Could not create review' });
+  }
+});
+
+app.get('/api/schedules/:id', async (req: Request, res: Response) => {
+  try {
+    const scheduleId = parseInt(req.params.id);
+    const schedule = await prisma.tourSchedule.findUnique({
+      where: { schedule_id: scheduleId },
+      include: {
+        Tour: true, // Include full tour data
+        VehicleAssignments: {
+          include: {
+            Vehicle: true
+          }
+        }
+      }
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ error: 'Schedule not found' });
+    }
+
+    res.json(schedule);
+  } catch (error) {
+    console.error('Error fetching schedule:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create booking endpoint
+app.post('/api/bookings', async (req: Request, res: Response) => {
+  try {
+    const { user_id, schedule_id, number_of_people, total_price, special_requests } = req.body;
+    
+    console.log('Creating booking with data:', { user_id, schedule_id, number_of_people, total_price });
+
+    // Convert number_of_people to integer
+    const numberOfPeople = parseInt(number_of_people);
+    
+    // Validate the conversion
+    if (isNaN(numberOfPeople)) {
+      return res.status(400).json({ error: 'Invalid number of people' });
+    }
+
+    // Check if schedule exists and has enough slots
+    const schedule = await prisma.tourSchedule.findUnique({
+      where: { schedule_id }
+    });
+
+    if (!schedule) {
+      return res.status(404).json({ error: 'Schedule not found' });
+    }
+
+    if (schedule.available_slots < numberOfPeople) {
+      return res.status(400).json({ error: 'Not enough available slots' });
+    }
+
+    // Get the vehicle assignment
+    const vehicleAssignment = await prisma.vehicleAssignment.findFirst({
+      where: { schedule_id }
+    });
+
+    if (!vehicleAssignment) {
+      return res.status(400).json({ error: 'No vehicle assigned to this schedule' });
+    }
+
+    // Create booking using transaction to ensure data consistency
+    const booking = await prisma.$transaction(async (prisma) => {
+      // Create the booking
+      const newBooking = await prisma.booking.create({
+        data: {
+          user_id,
+          schedule_id,
+          assignment_id: vehicleAssignment.assignment_id,
+          booking_date: new Date(),
+          number_of_people: numberOfPeople, // Use the converted integer value
+          total_price,
+          special_requests,
+          booking_status: 'PENDING',
+          payment_status: 'PENDING'
+        }
+      });
+
+      // Update available slots
+      await prisma.tourSchedule.update({
+        where: { schedule_id },
+        data: {
+          available_slots: {
+            decrement: numberOfPeople  // Use the converted integer value
+          }
+        }
+      });
+
+      return newBooking;
+    });
+
+    console.log('Booking created successfully:', booking);
+    res.status(201).json(booking);
+
+  } catch (error) {
+    console.error('Error creating booking:', error);
+    res.status(500).json({ 
+      error: 'Could not create booking',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+app.post('/api/invoices', async (req: Request, res: Response) => {
+  try {
+    const { booking_id, user_id, amount } = req.body;
+    
+    console.log('Creating invoice with data:', { booking_id, user_id, amount });
+
+    // Verify booking exists
+    const booking = await prisma.booking.findUnique({
+      where: { booking_id }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    const invoice = await prisma.invoice.create({
+      data: {
+        booking_id,
+        user_id,
+        amount,
+        date: new Date(),
+        payment_status: 'PENDING'
+      }
+    });
+
+    console.log('Invoice created successfully:', invoice);
+    res.status(201).json(invoice);
+
+  } catch (error) {
+    console.error('Error creating invoice:', error);
+    res.status(500).json({ 
+      error: 'Could not create invoice',
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    });
+  }
+});
+
+// Update booking status endpoint
+app.patch('/api/bookings/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { payment_status, booking_status } = req.body;
+
+    const booking = await prisma.booking.update({
+      where: { booking_id: Number(id) },
+      data: { 
+        payment_status,
+        booking_status 
+      }
+    });
+
+    res.json(booking);
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    res.status(500).json({ error: 'Could not update booking' });
+  }
+});
+
+// Update invoice status endpoint
+app.patch('/api/invoices/booking/:bookingId', async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+    const { payment_status } = req.body;
+
+    const invoice = await prisma.invoice.updateMany({
+      where: { booking_id: Number(bookingId) },
+      data: { payment_status }
+    });
+
+    res.json(invoice);
+  } catch (error) {
+    console.error('Error updating invoice:', error);
+    res.status(500).json({ error: 'Could not update invoice' });
   }
 });
 

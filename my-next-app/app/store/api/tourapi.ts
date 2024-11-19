@@ -142,7 +142,7 @@ export interface TourResponses extends Tour {
 export const tourApi = createApi({
   reducerPath: 'tourApi',
   tagTypes: ['Tour'], // Add this line to define tag types
-  baseQuery: fetchBaseQuery({ baseUrl: 'https://doanchuyennganhweb.onrender.com/trpc' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }),
   endpoints: (builder) => ({
     getLocations: builder.query<Location[], void>({
       query: () => 'location.getLocations',
@@ -226,6 +226,10 @@ export const tourApi = createApi({
       transformResponse: (response: ApiResponse<TourSchedule[]>) => response.result.data,
       providesTags: (_result, _error, id) => [{ type: 'Tour', id }],
     }),
+    getReviewsByTourId: builder.query<Review[], number>({
+      query: (tourId) => `tour.getReviewsByTourId?input=${tourId}`,
+      transformResponse: (response: ApiResponse<Review[]>) => response.result.data,
+    }),
   }),
 });
 
@@ -242,5 +246,6 @@ export const {
   useGetAvailableVehiclesQuery,
   useUpdateScheduleMutation,
   useGetSchedulesByTourIdQuery,
+  useGetReviewsByTourIdQuery,
 
 } = tourApi;

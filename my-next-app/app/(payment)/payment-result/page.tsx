@@ -1,107 +1,92 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-
-// Định nghĩa interface cho response codes
-interface ResponseMessages {
-  [key: string]: {
-    success: boolean;
-    message: string;
-  };
-}
-
-const RESPONSE_CODES: ResponseMessages = {
-  "00": {
-    success: true,
-    message: "Giao dịch thành công"
-  },
-  "07": {
-    success: true,
-    message: "Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường)."
-  },
-  "09": {
-    success: false,
-    message: "Giao dịch không thành công do: Thẻ/Tài khoản chưa đăng ký dịch vụ InternetBanking."
-  },
-  "10": {
-    success: false,
-    message: "Giao dịch không thành công do: Xác thực thông tin thẻ/tài khoản không đúng quá 3 lần"
-  },
-  "11": {
-    success: false,
-    message: "Giao dịch không thành công do: Đã hết hạn chờ thanh toán. Vui lòng thực hiện lại giao dịch."
-  },
-  "12": {
-    success: false,
-    message: "Giao dịch không thành công do: Thẻ/Tài khoản bị khóa."
-  },
-  "13": {
-    success: false,
-    message: "Giao dịch không thành công do: Nhập sai mật khẩu xác thực (OTP). Vui lòng thực hiện lại giao dịch."
-  },
-  "24": {
-    success: false,
-    message: "Giao dịch không thành công do: Khách hàng hủy giao dịch"
-  },
-  "51": {
-    success: false,
-    message: "Giao dịch không thành công do: Số dư tài khoản không đủ."
-  },
-  "65": {
-    success: false,
-    message: "Giao dịch không thành công do: Tài khoản đã vượt quá hạn mức giao dịch trong ngày."
-  },
-  "75": {
-    success: false,
-    message: "Ngân hàng thanh toán đang bảo trì."
-  },
-  "79": {
-    success: false,
-    message: "Giao dịch không thành công do: Nhập sai mật khẩu thanh toán quá số lần quy định."
-  },
-  "99": {
-    success: false,
-    message: "Giao dịch không thành công do lỗi hệ thống."
-  }
-};
+'use client';
+import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 const PaymentResult = () => {
   const searchParams = useSearchParams();
-  const [result, setResult] = useState({ success: false, message: "" });
+  const router = useRouter();
+  const [message, setMessage] = useState('Đang xử lý kết quả thanh toán...');
+  const [status, setStatus] = useState<'success' | 'error' | 'loading'>('loading');
 
   useEffect(() => {
-    const processPaymentResult = () => {
-      const responseCode = searchParams.get("vnp_ResponseCode");
-      
-      if (responseCode) {
-        const response = RESPONSE_CODES[responseCode] || {
-          success: false,
-          message: "Lỗi không xác định. Vui lòng liên hệ bộ phận hỗ trợ."
-        };
+    const updatePaymentStatus = async () => {
+      try {
+        const vnp_ResponseCode = searchParams.get('vnp_ResponseCode');
+        const vnp_TxnRef = searchParams.get('vnp_TxnRef') || '';
+        const booking_id = vnp_TxnRef.split('_')[1];
 
-        setResult(response);
+        // Map response codes to payment status
+        let paymentStatus;
+        switch (vnp_ResponseCode) {
+          case '00':
+            paymentStatus = 'COMPLETED';
+            setStatus('success');
+            break;
+          case '24':
+            paymentStatus = 'CANCELLED';
+            setStatus('error');
+            break;
+          default:
+            paymentStatus = 'FAILED';
+            setStatus('error');
+        }
+
+        // Update booking status
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings/${booking_id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payment_status: paymentStatus,
+            booking_status: paymentStatus === 'COMPLETED' ? 'CONFIRMED' : 'CANCELLED'
+          })
+        });
+
+        // Update invoice status
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices/booking/${booking_id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payment_status: paymentStatus
+          })
+        });
+
+        setMessage(
+          paymentStatus === 'COMPLETED'
+            ? 'Thanh toán thành công! Đang chuyển hướng...'
+            : paymentStatus === 'CANCELLED'
+            ? 'Bạn đã hủy thanh toán'
+            : 'Thanh toán thất bại!'
+        );
+
+        // Redirect after 3 seconds
+        setTimeout(() => {
+          router.push('/');
+        }, 3000);
+
+      } catch (error) {
+        console.error('Error updating payment status:', error);
+        setMessage('Có lỗi xảy ra khi cập nhật trạng thái thanh toán');
+        setStatus('error');
       }
     };
 
-    processPaymentResult();
-  }, [searchParams]);
+    updatePaymentStatus();
+  }, [searchParams, router]);
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-bold mb-4">Kết quả thanh toán</h1>
-        <div className={`p-4 rounded ${result.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          <p className="text-center font-medium">{result.message}</p>
-        </div>
-        <div className="mt-6 text-center">
-          <a 
-            href="/" 
-            className="text-blue-500 hover:text-blue-600 underline"
-          >
-            Quay về trang chủ
-          </a>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md text-center">
+        {status === 'loading' && (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+        )}
+        {status === 'success' && (
+          <div className="text-green-500 text-5xl mb-4">✓</div>
+        )}
+        {status === 'error' && (
+          <div className="text-red-500 text-5xl mb-4">×</div>
+        )}
+        <h1 className="text-2xl font-bold mb-4">{message}</h1>
+        <p className="text-gray-600">Bạn sẽ được chuyển hướng tự động...</p>
       </div>
     </div>
   );

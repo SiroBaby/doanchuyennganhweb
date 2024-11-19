@@ -1,145 +1,211 @@
-"use client";
+'use client';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
-import { useState } from "react";
-
-interface OrderInfo {
-  ticketQuantity: number;
+interface PaymentFormData {
+  numberOfPeople: number;
+  specialRequests: string;
   bankCode: string;
   language: string;
 }
 
+interface Schedule {
+  schedule_id: number;
+  base_price: number;
+  available_slots: number;
+  Tour: {
+    tour_id: number;
+    tour_name: string;
+  };
+}
+
 const PaymentPage = () => {
-  const [orderInfo, setOrderInfo] = useState<OrderInfo>({
-    ticketQuantity: 1,
+  const { userId } = useAuth();
+  const searchParams = useSearchParams();
+  const scheduleId = searchParams.get('scheduleId');
+  const [schedule, setSchedule] = useState<Schedule | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [formData, setFormData] = useState<PaymentFormData>({
+    numberOfPeople: 1,
+    specialRequests: '',
     bankCode: '',
     language: 'vn'
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [paymentUrl, setPaymentUrl] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOrderInfo({
-      ...orderInfo,
-      [e.target.name]: e.target.value,
-    });
+  useEffect(() => {
+    const fetchScheduleDetails = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/schedules/${scheduleId}`);
+        const data = await response.json();
+        setSchedule(data);
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (scheduleId) {
+      fetchScheduleDetails();
+    }
+  }, [scheduleId]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userId || !schedule) return;
 
     try {
-      // Tính toán số tiền dựa trên số lượng vé
-      const amount = orderInfo.ticketQuantity * 100000; // 100,000 VND per ticket
-      const orderId = `ORDER_${Math.floor(Date.now() / 1000)}`;
-      
-      const response = await fetch("/api/create-payment-url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId,
-          amount,
-          orderInfo: `Thanh toán ${orderInfo.ticketQuantity} vé`,
-          bankCode: orderInfo.bankCode,
-          language: orderInfo.language,
-          ipAddr: "127.0.0.1" // Trong thực tế nên lấy IP thật của người dùng
-        }),
+      // 1. Create booking record
+      const bookingData = {
+        user_id: userId,
+        schedule_id: Number(scheduleId),
+        number_of_people: formData.numberOfPeople,
+        total_price: schedule.base_price * formData.numberOfPeople,
+        special_requests: formData.specialRequests,
+        booking_status: 'PENDING',
+        payment_status: 'PENDING'
+      };
+
+      const bookingResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
       });
-  
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+
+      if (!bookingResponse.ok) {
+        const error = await bookingResponse.json();
+        throw new Error(error.details || 'Failed to create booking');
       }
-  
-      const data = await response.json();
+
+      const bookingResult = await bookingResponse.json();
+      console.log('Booking created:', bookingResult);
+
+      // 2. Create invoice
+      const invoiceData = {
+        booking_id: bookingResult.booking_id,
+        user_id: userId,
+        amount: schedule.base_price * formData.numberOfPeople,
+        payment_status: 'PENDING'
+      };
+
+      const invoiceResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoiceData)
+      });
+
+      if (!invoiceResponse.ok) {
+        const error = await invoiceResponse.json();
+        throw new Error(error.details || 'Failed to create invoice');
+      }
+
+      const invoiceResult = await invoiceResponse.json();
+      console.log('Invoice created:', invoiceResult);
+
+      // 3. Create VNPay payment URL
+      const paymentData = {
+        orderId: `TOUR_${bookingResult.booking_id}_${Date.now()}`,
+        amount: schedule.base_price * formData.numberOfPeople,
+        orderInfo: `Thanh toan tour ${schedule.Tour.tour_name}`, // Update this line
+        bankCode: formData.bankCode,
+        language: formData.language,
+        ipAddr: '127.0.0.1',
+        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment-result` // Update this line
+      };
+
+      const vnpayResponse = await fetch('/api/create-payment-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentData)
+      });
+
+      if (!vnpayResponse.ok) {
+        throw new Error('Failed to create payment URL');
+      }
+
+      const { paymentUrl } = await vnpayResponse.json();
       
-      if (data.success && data.paymentUrl) {
-        // Chuyển hướng người dùng đến trang thanh toán VNPay
-        window.location.href = data.paymentUrl;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
       } else {
-        alert('Không thể tạo URL thanh toán. Vui lòng thử lại.');
+        throw new Error('No payment URL received');
       }
     } catch (error) {
-      console.error("Error creating payment:", error);
-      alert('Có lỗi xảy ra. Vui lòng thử lại sau.');
+      console.error('Error processing payment:', error);
+      alert(`Có lỗi xảy ra trong quá trình thanh toán: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
+  if (loading) return <div>Loading...</div>;
+  if (!schedule) return <div>Schedule not found</div>;
+
   return (
     <div className="container mx-auto p-4">
-      <h3 className="text-2xl font-bold mb-4">Tạo thanh toán</h3>
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <form onSubmit={handleSubmit}>
-          {/* Số lượng vé */}
-          <div className="mb-4">
-            <label className="block mb-2">Số lượng vé</label>
-            <input
-              type="number"
-              name="ticketQuantity"
-              value={orderInfo.ticketQuantity}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-            />
-          </div>
+      <h1 className="text-2xl font-bold mb-4">Thanh toán Tour</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-2">Số lượng người</label>
+          <input
+            type="number"
+            name="numberOfPeople"
+            min="1"
+            max={schedule.available_slots}
+            value={formData.numberOfPeople}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+          />
+        </div>
 
-          {/* Phương thức thanh toán */}
-          <div className="mb-4">
-            <label className="block mb-2">Chọn Phương thức thanh toán:</label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="bankCode"
-                  value=""
-                  checked={orderInfo.bankCode === ""}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                Cổng thanh toán VNPAYQR
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="bankCode"
-                  value="VNPAYQR"
-                  checked={orderInfo.bankCode === "VNPAYQR"}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                Thanh toán qua ứng dụng hỗ trợ VNPAYQR
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="bankCode"
-                  value="VNBANK"
-                  checked={orderInfo.bankCode === "VNBANK"}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                Thanh toán qua ATM-Tài khoản ngân hàng nội địa
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="bankCode"
-                  value="INTCARD"
-                  checked={orderInfo.bankCode === "INTCARD"}
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                Thanh toán qua thẻ quốc tế
-              </label>
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        <div>
+          <label className="block mb-2">Yêu cầu đặc biệt</label>
+          <textarea
+            name="specialRequests"
+            value={formData.specialRequests}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            rows={4}
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Phương thức thanh toán:</label>
+          <select 
+            name="bankCode"
+            value={formData.bankCode}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
           >
-            Thanh toán
-          </button>
-        </form>
-      </div>
+            <option value="">Cổng thanh toán VNPAYQR</option>
+            <option value="VNPAYQR">Thanh toán qua ứng dụng hỗ trợ VNPAYQR</option>
+            <option value="VNBANK">Thanh toán qua ATM-Tài khoản ngân hàng nội địa</option>
+          </select>
+        </div>
+
+        <div>
+          <p className="font-bold">
+            Tổng tiền: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(schedule.base_price * formData.numberOfPeople)}
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-pink-600 text-white py-2 rounded hover:bg-pink-700"
+        >
+          Thanh toán ngay
+        </button>
+      </form>
     </div>
   );
 };
