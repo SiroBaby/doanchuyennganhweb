@@ -8,9 +8,11 @@ import fs from 'fs';
 import multer from 'multer';
 import path from 'path';
 import { Webhook } from 'svix';
-import { number, z } from 'zod';
+import { z } from 'zod';
 import { v2 as cloudinary } from 'cloudinary';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import QRCode from 'qrcode';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -1009,6 +1011,27 @@ const appRouter = t.router({
           throw new Error('No vehicle assigned to this schedule');
         }
 
+        // Get schedule and tour information
+        const schedule = await prisma.tourSchedule.findUnique({
+          where: { schedule_id: input.schedule_id },
+          include: {
+            Tour: true
+          }
+        });
+
+        if (!schedule) {
+          throw new Error('Schedule not found');
+        }
+
+        // Get user email
+        const user = await prisma.user.findUnique({
+          where: { user_id: input.user_id }
+        });
+
+        if (!user) {
+          throw new Error('User not found');
+        }
+
         // Create booking with the vehicle assignment
         const booking = await prisma.booking.create({
           data: {
@@ -1033,6 +1056,9 @@ const appRouter = t.router({
             }
           }
         });
+
+        // Send QR code to customer's email
+        await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
 
         return booking;
       } catch (error) {
@@ -1125,6 +1151,53 @@ const appRouter = t.router({
     });
   })
 });
+
+// Cấu hình nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER, // email của bạn
+    pass: process.env.EMAIL_PASS  // mật khẩu ứng dụng của gmail
+  }
+});
+
+// Hàm gửi email với QR code
+async function sendBookingQRCode(bookingId: number, customerEmail: string, tourName: string) {
+  try {
+    // Tạo URL để kiểm tra booking
+    const bookingUrl = `https://doanchuyennganhweb.vercel.app/checked/${bookingId}`;
+    
+    // Tạo QR code
+    const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl);
+
+    // Tạo nội dung email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: customerEmail,
+      subject: 'Booking Confirmation QR Code',
+      html: `
+        <h1>Thank you for booking with us!</h1>
+        <h2>Tour: ${tourName}</h2>
+        <p>Your booking ID is: ${bookingId}</p>
+        <p>Please use this QR code to check your booking status:</p>
+        <img src="${qrCodeDataUrl}" alt="Booking QR Code"/>
+        <p>Or click this link: <a href="${bookingUrl}">${bookingUrl}</a></p>
+      `,
+      attachments: [{
+        filename: 'booking-qr.png',
+        content: qrCodeDataUrl.split('base64,')[1],
+        encoding: 'base64'
+      }]
+    };
+
+    // Gửi email
+    await transporter.sendMail(mailOptions);
+    console.log('QR Code sent to email successfully');
+  } catch (error) {
+    console.error('Error sending QR code email:', error);
+    throw error;
+  }
+}
 
 app.use(cors());
 app.use('/trpc', createExpressMiddleware({ router: appRouter }));
