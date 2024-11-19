@@ -1266,20 +1266,21 @@ async function sendBookingQRCode(bookingId: number, customerEmail: string, tourN
 
     <p style="margin: 20px 0;">Please use the QR code below to easily check your booking status:</p>
     <div style="text-align: center; margin: 20px 0;">
-        <img src="${qrCodeDataUrl}" alt="Booking QR Code" style="max-width: 200px; border: 1px solid #ddd; padding: 5px; border-radius: 5px;"/>
+        <!-- Ensure the QR code URL is valid -->
+        <img 
+            src="${qrCodeDataUrl}" 
+            alt="Booking QR Code" 
+            style="max-width: 200px; border: 1px solid #ddd; padding: 5px; border-radius: 5px;"
+            onerror="this.src='https://via.placeholder.com/200?text=QR+Code+Not+Available';"
+        />
     </div>
-    <p style="text-align: center;">Or click the link below for more details:</p>
-    <p style="text-align: center;">
-        <a href="${bookingUrl}" style="color: #007BFF; text-decoration: none;">${bookingUrl}</a>
-    </p>
-    
     <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
     
     <h3 style="color: #333;">Need Assistance?</h3>
     <p>If you have any questions or need further support, feel free to contact us:</p>
     <ul style="list-style: none; padding: 0; margin: 0;">
-        <li><strong>Email:</strong> support@example.com</li>
-        <li><strong>Phone:</strong> +123 456 789</li>
+        <li><strong>Email:</strong> 2254810056@vaa.edu.vn</li>
+        <li><strong>Phone:</strong> +84 772 153 092</li>
         <li><strong>Working Hours:</strong> Mon-Fri, 9 AM - 6 PM</li>
     </ul>
     
