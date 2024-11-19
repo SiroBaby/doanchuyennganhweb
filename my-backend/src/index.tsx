@@ -428,6 +428,51 @@ const vehicleRouter = t.router({
       }
     });
   }),
+  getBookingsByVehicleAndSchedule: t.procedure
+    .input(z.object({
+      vehicle_id: z.number(),
+      schedule_id: z.number(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        // Tìm vehicle assignment trước
+        const vehicleAssignment = await prisma.vehicleAssignment.findFirst({
+          where: {
+            vehicle_id: input.vehicle_id,
+            schedule_id: input.schedule_id,
+          },
+        });
+
+        if (!vehicleAssignment) {
+          throw new Error('Vehicle assignment not found');
+        }
+
+        // Lấy danh sách booking dựa trên assignment_id
+        const bookings = await prisma.booking.findMany({
+          where: {
+            assignment_id: vehicleAssignment.assignment_id,
+          },
+          select: {
+            booking_id: true,
+            booking_status: true,
+            User: {
+              select: {
+                full_name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+
+        return bookings;
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        throw new Error('Could not fetch bookings');
+      }
+    }),
 });
 
 const userRouter = t.router({
@@ -1339,6 +1384,23 @@ app.get('/api/schedules/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching schedule:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Express.js (Node.js) Example
+app.post('/api/checked/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // Giả sử bạn có một cơ sở dữ liệu với bảng `users` chứa cột `checked`
+  try {
+    const user = await prisma.booking.update({
+      where: { booking_id: Number(id) },
+      data: { booking_status: 'CHECKED' },
+    });
+
+    return res.status(200).json({ message: 'User checked successfully', user });
+  } catch (error) {
+    return res.status(400).json({ message: 'Failed to check user', error });
   }
 });
 

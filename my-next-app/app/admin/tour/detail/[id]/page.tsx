@@ -76,13 +76,13 @@ const TourDetailPage = () => {
                 <CardContent>
                     {/* Action Buttons */}
                     <Box position="absolute" top={10} right={10}>
-                        <IconButton 
+                        <IconButton
                             color="primary"
                             onClick={() => router.push(`/admin/tour/edit/${tour.tour_id}`)}
                         >
                             <EditIcon />
                         </IconButton>
-                        <IconButton 
+                        <IconButton
                             color="error"
                             onClick={handleDelete}
                         >
@@ -183,9 +183,17 @@ const TourDetailPage = () => {
                                                         Trạng thái: {schedule.status}
                                                     </Typography>
                                                     {schedule.VehicleAssignments?.[0] && (
-                                                        <Typography variant="body2">
-                                                            Phương tiện: {schedule.VehicleAssignments[0].Vehicle.vehicle_type} - {schedule.VehicleAssignments[0].Vehicle.vehicle_code}
-                                                        </Typography>
+                                                        <Box>
+                                                            <Typography variant="body2">
+                                                                Phương tiện: {schedule.VehicleAssignments[0].Vehicle.vehicle_type} - {schedule.VehicleAssignments[0].Vehicle.vehicle_code}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Phương tiện id: {schedule.VehicleAssignments[0].vehicle_id}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Ngày khởi hành id: {schedule.schedule_id}
+                                                            </Typography>
+                                                        </Box>
                                                     )}
                                                 </Box>
                                             }

@@ -1,6 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-
+interface BookingListItem {
+  booking_id: number;
+  booking_status: string;
+  User: {
+    full_name: string;
+    email: string;
+  };
+}
 
 // Tạo API cho phương tiện
 export const vehiclesApi = createApi({
@@ -48,8 +55,13 @@ export const vehiclesApi = createApi({
       }),
       invalidatesTags: ['Vehicle'],
     }),
+    getBookingsByVehicleAndSchedule: builder.query<BookingListItem[], { vehicle_id: number; schedule_id: number }>({
+      query: ({ vehicle_id, schedule_id }) => 
+        `vehicle.getBookingsByVehicleAndSchedule?input=${JSON.stringify({ vehicle_id, schedule_id })}`,
+      transformResponse: (response: { result: { data: BookingListItem[] } }) => response.result.data,
+    }),
   }),
 });
 
 // Xuất các hook để sử dụng trong các component
-export const { useAddVehicleMutation, useGetVehiclesQuery, useGetVehicleByIdQuery, useUpdateVehicleMutation, useDeleteVehicleMutation } = vehiclesApi;
+export const { useAddVehicleMutation, useGetVehiclesQuery, useGetVehicleByIdQuery, useUpdateVehicleMutation, useDeleteVehicleMutation, useGetBookingsByVehicleAndScheduleQuery } = vehiclesApi;
