@@ -13,6 +13,8 @@ const PaymentResult = () => {
       try {
         const vnp_ResponseCode = searchParams.get('vnp_ResponseCode');
         const pendingBooking = JSON.parse(localStorage.getItem('pendingBooking') || '{}');
+        console.log('Payment response code:', vnp_ResponseCode); // Debug log
+        console.log('Pending booking data:', pendingBooking); // Debug log
 
         if (!pendingBooking.user_id) {
           throw new Error('No pending booking found');
@@ -36,13 +38,16 @@ const PaymentResult = () => {
             });
 
             if (!bookingResponse.ok) {
-              throw new Error('Failed to create booking');
+              const errorData = await bookingResponse.json();
+              console.error('Booking creation failed:', errorData); // Debug log
+              throw new Error(`Failed to create booking: ${errorData.error || 'Unknown error'}`);
             }
 
             const booking = await bookingResponse.json();
+            console.log('Booking created successfully:', booking); // Debug log
 
             // Create invoice after successful booking
-            await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, {
+            const invoiceResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -52,6 +57,12 @@ const PaymentResult = () => {
                 payment_status: paymentStatus
               })
             });
+
+            if (!invoiceResponse.ok) {
+              console.error('Invoice creation failed:', await invoiceResponse.json()); // Debug log
+            } else {
+              console.log('Invoice created successfully'); // Debug log
+            }
             break;
 
           case '24':
@@ -80,7 +91,7 @@ const PaymentResult = () => {
         }, 3000);
 
       } catch (error) {
-        console.error('Error processing payment:', error);
+        console.error('Detailed error in payment processing:', error); // Enhanced error logging
         setMessage('Có lỗi xảy ra khi xử lý thanh toán');
         setStatus('error');
         localStorage.removeItem('pendingBooking');
