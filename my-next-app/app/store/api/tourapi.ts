@@ -239,7 +239,8 @@ export const tourApi = createApi({
     }),
     getSchedulesByTourId: builder.query<TourSchedule[], number>({
       query: (tourId) => ({
-        url: `/tours/${tourId}/schedules`,
+        url: 'tour.getSchedulesByTourId',
+        params: { input: tourId }
       }),
       transformResponse: (response: ApiResponse<TourSchedule[]>) => response.result.data,
       providesTags: (_result, _error, id) => [{ type: 'Tour', id }],
