@@ -41,7 +41,7 @@ const Divider = styled.div`
   width: 1px;
   height: 45px;
   background-color: #bbb;
-  margin: 0 12px;
+  margin: 0 10px;
 `;
 
 const SearchButton = styled.button`

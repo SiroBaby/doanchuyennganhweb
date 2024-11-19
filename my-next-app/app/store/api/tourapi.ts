@@ -180,11 +180,18 @@ export const tourApi = createApi({
       transformResponse: (response: ApiResponse<TourResponse>) => response.result.data,
       invalidatesTags: ['Tour'], // Add this line
     }),
-    getTours: builder.query<TourListResponse[], void>({
-      query: () => 'tour.getTours',
+    // update api chỗ này nè hihi
+    getTours: builder.query<TourListResponse[], { location_id?: number, month?: string, price?: number }>({
+      query: ({ location_id, month, price }) => ({
+        url: 'tour.getTours',
+        params: {
+          location_id,
+          month,
+          price,
+        },
+      }),
       transformResponse: (response: ApiResponse<TourListResponse[]>) => response.result.data,
-      providesTags: ['Tour'], // Add this line to provide tags
-    }),
+    }),    
     deleteTour: builder.mutation<void, number>({
       query: (tourId) => ({
         url: `tour.deleteTour`,
