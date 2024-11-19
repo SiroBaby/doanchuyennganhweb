@@ -1,3 +1,4 @@
+'use client'
 import React from 'react';
 import {
   Card,
@@ -11,10 +12,7 @@ import {
   TableHead,
   TableRow,
   Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider
+  CircularProgress
 } from '@mui/material';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PersonIcon from '@mui/icons-material/Person';
@@ -22,86 +20,52 @@ import EventIcon from '@mui/icons-material/Event';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import PaymentIcon from '@mui/icons-material/Payment';
+import { useGetOrderDetailsQuery } from '@/app/store/api/orderapi';
+import { useParams } from 'next/navigation';
 
 const OrderDetailPage = () => {
-  // Sample invoice data with multiple values for certain attributes
+  const params = useParams();
+  const orderId = Number(params.id);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      maximumFractionDigits: 0 
+    }).format(amount);
+  };
+
+  const { data: orderDetails, isLoading, error } = useGetOrderDetailsQuery(orderId);
+
+  if (isLoading) return <Box p={3}><CircularProgress /></Box>;
+  if (error) return <Box p={3}>Error loading order details</Box>;
+  if (!orderDetails) return <Box p={3}>No order found</Box>;
+
+  // Map API data to your form structure
   const invoiceData = {
-    invoice_id: 1001,
-    booking_id: 5001,
-    user_id: 101,
-    user_name: "Nguyễn Văn A",
-    user_email: "nguyenvana@email.com",
-    user_phone: "0123456789",
-    amount: 15000000,
-    date: "2024-10-15",
+    invoice_id: orderDetails.Invoices[0]?.invoice_id,
+    booking_id: orderDetails.booking_id,
+    user_id: orderDetails.User.user_id,
+    user_name: orderDetails.User.full_name,
+    user_email: orderDetails.User.email,
+    amount: orderDetails.Invoices[0]?.amount || 0,
+    date: orderDetails.Invoices[0]?.date,
     booking: {
-      booking_date: "2024-09-30",
-      number_of_people: 3,
-      total_price: 15000000,
-      booking_status: "Confirmed",
+      booking_date: new Date(orderDetails.booking_date).toLocaleDateString(),
+      number_of_people: orderDetails.number_of_people,
+      total_price: orderDetails.total_price,
+      booking_status: orderDetails.booking_status,
+      payment_status: orderDetails.payment_status,
       tour: {
-        tour_id: 201,
-        tour_name: "Du lịch Hà Nội - Hạ Long - Sapa",
-        description: "Khám phá vẻ đẹp của miền Bắc Việt Nam",
-        duration: "5 ngày 4 đêm",
-        location: "Hà Nội, Hạ Long, Sapa",
-        schedules: [
-          {
-            start_date: "2024-10-15",
-            end_date: "2024-10-19",
-            base_price: 5000000,
-            status: "Confirmed",
-            vehicle: {
-              vehicle_code: "BUS001",
-              vehicle_type: "Xe khách 45 chỗ",
-              available_seats: 10
-            }
-          },
-          {
-            start_date: "2024-10-16",
-            end_date: "2024-10-17",
-            base_price: 2000000,
-            status: "Confirmed",
-            vehicle: {
-              vehicle_code: "BOAT001",
-              vehicle_type: "Tàu du lịch Hạ Long",
-              available_seats: 30
-            }
-          },
-          {
-            start_date: "2024-10-18",
-            end_date: "2024-10-19",
-            base_price: 3000000,
-            status: "Confirmed",
-            vehicle: {
-              vehicle_code: "TRAIN001",
-              vehicle_type: "Tàu hỏa Hà Nội - Lào Cai",
-              available_seats: 20
-            }
-          }
-        ],
-      }
-    },
-    payments: [
-      {
-        payment_id: 7001,
-        amount: 5000000,
-        payment_date: "2024-09-30",
-        payment_method: "Credit Card"
+        name: orderDetails.TourSchedule.Tour.tour_name,
+        location: orderDetails.TourSchedule.Tour.Location.location_name,
+        duration: orderDetails.TourSchedule.Tour.duration
       },
-      {
-        payment_id: 7002,
-        amount: 5000000,
-        payment_date: "2024-10-05",
-        payment_method: "Bank Transfer"
-      },
-      {
-        payment_id: 7003,
-        amount: 5000000,
-        payment_date: "2024-10-10",
-        payment_method: "Cash"
+      vehicle: {
+        code: orderDetails.VehicleAssignment?.Vehicle.vehicle_code,
+        type: orderDetails.VehicleAssignment?.Vehicle.vehicle_type
       }
-    ]
+    }
   };
 
   return (
@@ -119,7 +83,6 @@ const OrderDetailPage = () => {
               </Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Tên: {invoiceData.user_name}</Typography>
               <Typography className="!text-gray-600 dark:!text-gray-400">Email: {invoiceData.user_email}</Typography>
-              <Typography className="!text-gray-600 dark:!text-gray-400">Số điện thoại: {invoiceData.user_phone}</Typography>
             </Box>
             <Box>
               <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 flex items-center">
@@ -146,11 +109,11 @@ const OrderDetailPage = () => {
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.booking.tour.tour_name}</TableCell>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.booking.tour.name}</TableCell>
                     <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.booking.tour.duration}</TableCell>
                     <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.booking.tour.location}</TableCell>
                     <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.booking.number_of_people}</TableCell>
-                    <TableCell className="!text-gray-600 dark:!text-gray-400">{invoiceData.amount.toLocaleString()} VND</TableCell>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">{formatCurrency(invoiceData.amount)}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -159,7 +122,7 @@ const OrderDetailPage = () => {
 
           <Box className="mb-6">
             <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 mb-2 flex items-center">
-              <DirectionsBusIcon className="mr-2" /> Lịch trình và Phương tiện
+              <DirectionsBusIcon className="mr-2" /> Ngày khởi hành và Phương tiện
             </Typography>
             <TableContainer component={Paper}>
               <Table>
@@ -169,19 +132,23 @@ const OrderDetailPage = () => {
                     <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200">Ngày kết thúc</TableCell>
                     <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200">Phương tiện</TableCell>
                     <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200">Mã phương tiện</TableCell>
-                    <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200">Chỗ trống</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {invoiceData.booking.tour.schedules.map((schedule, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="!text-gray-600 dark:!text-gray-400">{schedule.start_date}</TableCell>
-                      <TableCell className="!text-gray-600 dark:!text-gray-400">{schedule.end_date}</TableCell>
-                      <TableCell className="!text-gray-600 dark:!text-gray-400">{schedule.vehicle.vehicle_type}</TableCell>
-                      <TableCell className="!text-gray-600 dark:!text-gray-400">{schedule.vehicle.vehicle_code}</TableCell>
-                      <TableCell className="!text-gray-600 dark:!text-gray-400">{schedule.vehicle.available_seats}</TableCell>
-                    </TableRow>
-                  ))}
+                  <TableRow>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">
+                      {new Date(orderDetails.TourSchedule.start_date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">
+                      {new Date(orderDetails.TourSchedule.end_date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">
+                      {orderDetails.VehicleAssignment.Vehicle.vehicle_type}
+                    </TableCell>
+                    <TableCell className="!text-gray-600 dark:!text-gray-400">
+                      {orderDetails.VehicleAssignment.Vehicle.vehicle_code}
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
@@ -191,38 +158,11 @@ const OrderDetailPage = () => {
             <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 mb-2 flex items-center">
               <PaymentIcon className="mr-2" /> Lịch sử thanh toán
             </Typography>
-            <List>
-              {invoiceData.payments.map((payment, index) => (
-                <React.Fragment key={index}>
-                  <ListItem>
-                    <ListItemText
-                      primary={`Thanh toán #${payment.payment_id}`}
-                      secondary={
-                        <>
-                          <Typography component="span" variant="body2" className="!text-gray-600 dark:!text-gray-400">
-                            Số tiền: {payment.amount.toLocaleString()} VND
-                          </Typography>
-                          <br />
-                          <Typography component="span" variant="body2" className="!text-gray-600 dark:!text-gray-400">
-                            Ngày: {new Date(payment.payment_date).toLocaleDateString()}
-                          </Typography>
-                          <br />
-                          <Typography component="span" variant="body2" className="!text-gray-600 dark:!text-gray-400">
-                            Phương thức: {payment.payment_method}
-                          </Typography>
-                        </>
-                      }
-                    />
-                  </ListItem>
-                  {index < invoiceData.payments.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
           </Box>
 
           <Box className="flex justify-between items-center">
             <Typography variant="h6" className="!text-gray-700 dark:!text-gray-300 flex items-center">
-              <AttachMoneyIcon className="mr-2" /> Tổng cộng: {invoiceData.amount.toLocaleString()} VND
+              <AttachMoneyIcon className="mr-2" /> Tổng cộng: {formatCurrency(invoiceData.amount)}
             </Typography>
           </Box>
         </CardContent>

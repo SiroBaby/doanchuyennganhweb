@@ -823,12 +823,142 @@ const tourTypeRouter = t.router({
   }),
 });
 
+const orderRouter = t.router({
+  getOrderDetails: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      try {
+      const order = await prisma.booking.findUnique({
+        where: { booking_id: input },
+        include: {
+          User: true,            
+          TourSchedule: {   
+            include: {
+              Tour: {
+                include: {
+                  Location: true
+                }
+              }
+            }
+          },
+          VehicleAssignment: {  
+            include: {
+              Vehicle: true
+            }
+          },
+          Invoices: true,
+        }
+      });
+      return order;
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      throw new Error('Không thể lấy thông tin đơn hàng');
+    }
+    }),
+});
+
+
+const dashboardRouter = t.router({
+  getDashboardStats: t.procedure.query(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [todayEarnings, totalBookings, pendingTours, tourTypeStats, monthlyStats] = await Promise.all([
+      // Get today's earnings from completed bookings
+      prisma.booking.aggregate({
+        where: {
+          booking_date: {
+            gte: today,
+          },
+          payment_status: 'COMPLETED',
+          booking_status: 'CONFIRMED'
+        },
+        _sum: {
+          total_price: true,
+        },
+      }),
+
+      // Get total active bookings count
+      prisma.booking.count({
+        where: {
+          booking_status: {
+            notIn: ['CANCELLED']
+          }
+        }
+      }),
+
+      // Get pending tours count
+      prisma.booking.count({
+        where: {
+          booking_status: 'PENDING',
+          payment_status: 'PENDING'
+        }
+      }),
+
+      // Get tour type distribution
+      prisma.$queryRaw`
+        SELECT 
+          t.tour_type_id,
+          COUNT(*) as _count,
+          tt.type_name
+        FROM Tour t
+        JOIN TourType tt ON t.tour_type_id = tt.type_id
+        WHERE t.deleted_at IS NULL
+        GROUP BY t.tour_type_id, tt.type_name
+      `,
+
+      // Get monthly stats from completed bookings
+      prisma.booking.groupBy({
+        by: ['booking_date'],
+        where: {
+          booking_date: {
+            gte: new Date(today.getFullYear(), today.getMonth() - 5, 1),
+          },
+          payment_status: 'COMPLETED',
+          booking_status: 'CONFIRMED'
+        },
+        _sum: {
+          total_price: true,
+        },
+        _count: true,
+        orderBy: {
+          booking_date: 'asc'
+        }
+      }),
+    ]);
+
+    return {
+      todayEarnings: Number(todayEarnings._sum.total_price) || 0,
+      totalBookings,
+      pendingTours,
+      tourTypeStats: (tourTypeStats as Array<{ tour_type_id: number; _count: number; type_name: string }>).map((stat) => ({
+        _count: Number(stat._count),
+        tour_type_id: stat.tour_type_id,
+        TourType: {
+          type_id: stat.tour_type_id,
+          type_name: stat.type_name
+        }
+      })),
+      monthlyStats: monthlyStats.reduce((acc, stat) => {
+        const month = new Date(stat.booking_date).toLocaleString('default', { month: 'short' });
+        acc[month] = {
+          income: Number(stat._sum.total_price) || 0,
+          tours: stat._count,
+        };
+        return acc;
+      }, {} as Record<string, { income: number; tours: number }>),
+    };
+  }),
+});
+
 const appRouter = t.router({
   vehicle: vehicleRouter,
   user: userRouter,
   tour: TourRouter,
   location: locationRouter,
   tourType: tourTypeRouter,
+  order: orderRouter,
+  dashboard: dashboardRouter,
   getScheduleById: t.procedure
     .input(z.number())
     .query(async ({ input }) => {
@@ -958,7 +1088,44 @@ const appRouter = t.router({
         where: { booking_id: input.booking_id },
         data: { payment_status: input.payment_status }
       });
-    })
+    }),
+
+  getBookings: t.procedure.query(async () => {
+    return await prisma.booking.findMany({
+      include: {
+        User: {
+          select: {
+            full_name: true,
+            email: true,
+            phone_number: true
+          }
+        },
+        TourSchedule: {
+          include: {
+            Tour: {
+              include: {
+                Location: true,
+              }
+            },
+            VehicleAssignments: {
+              include: {
+                Vehicle: true
+              }
+            }
+          }
+        },
+        Invoices: true,
+        Payments: {
+          include: {
+            PaymentMethod: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+  })
 });
 
 app.use(cors());
