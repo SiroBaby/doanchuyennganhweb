@@ -83,16 +83,25 @@ export interface TourListResponse extends Tour {
 
 export interface TourSchedule {
   schedule_id: number;
-  start_date: string;
-  end_date: string;
-  base_price: number;
+  tour_id: number;
+  start_date: Date;
+  end_date: Date;
   available_slots: number;
-  status: 'ACTIVE' | 'CANCELLED' | 'COMPLETED' | 'FULL';
-  vehicle_id?: number;  // Add this line
-  VehicleAssignments?: {
+  base_price: number;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+  Tour?: {
+    tour_id: number;
+    tour_name: string;
+  };
+  VehicleAssignments?: Array<{
     vehicle_id: number;
-    Vehicle: Vehicle;
-  }[];
+    Vehicle: {
+      vehicle_code: string;
+      vehicle_type: string;
+    };
+  }>;
 }
 
 export interface TourDetailResponse extends Tour {
@@ -100,6 +109,16 @@ export interface TourDetailResponse extends Tour {
   TourType: TourType;
   TourImages: TourImage[];
   TourSchedules: TourSchedule[];
+  Reviews?: Array<{
+    review_id: number;
+    user_id: string;
+    rating: number;
+    comment: string;
+    review_date: string;
+    User: {
+      full_name: string;
+    };
+  }>;
 }
 
 export interface Vehicle {
@@ -226,6 +245,10 @@ export const tourApi = createApi({
       transformResponse: (response: ApiResponse<TourSchedule[]>) => response.result.data,
       providesTags: (_result, _error, id) => [{ type: 'Tour', id }],
     }),
+    getReviewsByTourId: builder.query<Review[], number>({
+      query: (tourId) => `tour.getReviewsByTourId?input=${tourId}`,
+      transformResponse: (response: ApiResponse<Review[]>) => response.result.data,
+    }),
   }),
 });
 
@@ -242,5 +265,6 @@ export const {
   useGetAvailableVehiclesQuery,
   useUpdateScheduleMutation,
   useGetSchedulesByTourIdQuery,
+  useGetReviewsByTourIdQuery,
 
 } = tourApi;

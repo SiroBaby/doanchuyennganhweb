@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { useRouter } from 'next/navigation'; // Changed from next/router
 import React from 'react';
 import styled from 'styled-components';
 
@@ -118,6 +119,7 @@ const Button = styled.button`
 
 // app/component/layout/TourCard.tsx
 const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
+  const router = useRouter();
   const defaultImage = '/default-tour.jpg';
   
   const getImageUrl = () => {
@@ -131,6 +133,10 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
       console.error('Error processing image URL:', error);
       return defaultImage;
     }
+  };
+
+  const handleBooking = () => {
+    router.push(`/detail-tour/${tour.tour_id}`);
   };
 
   return (
@@ -161,10 +167,15 @@ const TourCard: React.FC<{ tour: Tour }> = ({ tour }) => {
         <PriceContainer>
           <div>
             <DiscountedPrice>
-              {tour.price_range ? `${tour.price_range.toLocaleString()} VND` : 'Liên hệ'}
+              {tour.price_range ? 
+                new Intl.NumberFormat('vi-VN', { 
+                  style: 'currency', 
+                  currency: 'VND' 
+                }).format(Number(tour.price_range)) 
+                : 'Liên hệ'}
             </DiscountedPrice>
           </div>
-          <Button>Đặt ngay</Button>
+          <Button onClick={handleBooking}>Đặt ngay</Button>
         </PriceContainer>
       </ContentContainer>
     </CardContainer>

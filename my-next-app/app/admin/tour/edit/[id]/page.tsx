@@ -32,6 +32,8 @@ interface Schedule {
   vehicle_id?: string;
 }
 
+type ScheduleStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'FULL';
+
 const EditTourPage = () => {
   const router = useRouter();
   const params = useParams();
@@ -224,6 +226,13 @@ const EditTourPage = () => {
     return inputDate >= today;
   };
 
+  const formatDateForValidation = (date: Date | string): string => {
+    if (date instanceof Date) {
+      return date.toISOString();
+    }
+    return new Date(date).toISOString();
+  };
+
   const handleScheduleChange = (index: number, field: keyof Schedule, value: string | number) => {
     setNewSchedules(prevSchedules => {
       const newSchedules = [...prevSchedules];
@@ -238,8 +247,8 @@ const EditTourPage = () => {
         const endDate = currentSchedule.end_date;
         if (endDate && value) {
           const isValidDuration = validateDateDuration(
-            value.toString(),
-            endDate,
+            formatDateForValidation(value.toString()),
+            formatDateForValidation(endDate),
             Number(formData.duration)
           );
 
@@ -254,8 +263,8 @@ const EditTourPage = () => {
         const startDate = currentSchedule.start_date;
         if (startDate && value) {
           const isValidDuration = validateDateDuration(
-            startDate,
-            value.toString(),
+            formatDateForValidation(startDate),
+            formatDateForValidation(value.toString()),
             Number(formData.duration)
           );
 
@@ -277,7 +286,7 @@ const EditTourPage = () => {
     });
   };
 
-  const handleExistingScheduleChange = (scheduleId: number, field: keyof TourSchedule, value: string | number) => {
+  const handleExistingScheduleChange = (scheduleId: number, field: keyof TourSchedule | 'vehicle_id', value: string | number) => {
     setExistingSchedules(prev => prev.map(schedule => {
       if (schedule.schedule_id === scheduleId) {
         if (field === 'start_date') {
@@ -287,8 +296,8 @@ const EditTourPage = () => {
           }
 
           const isValidDuration = validateDateDuration(
-            value.toString(),
-            schedule.end_date,
+            formatDateForValidation(value.toString()),
+            formatDateForValidation(schedule.end_date),
             Number(formData.duration)
           );
 
@@ -300,8 +309,8 @@ const EditTourPage = () => {
 
         if (field === 'end_date') {
           const isValidDuration = validateDateDuration(
-            schedule.start_date,
-            value.toString(),
+            formatDateForValidation(schedule.start_date),
+            formatDateForValidation(value.toString()),
             Number(formData.duration)
           );
 
@@ -348,13 +357,14 @@ const EditTourPage = () => {
 
   const handleUpdateExistingSchedule = async (schedule: TourSchedule) => {
     try {
+      const status = schedule.status as ScheduleStatus; // Thêm type assertion
       await updateSchedule({
         schedule_id: schedule.schedule_id,
-        start_date: schedule.start_date,
-        end_date: schedule.end_date,
+        start_date: schedule.start_date instanceof Date ? schedule.start_date.toISOString() : schedule.start_date,
+        end_date: schedule.end_date instanceof Date ? schedule.end_date.toISOString() : schedule.end_date,
         base_price: Number(schedule.base_price),
         available_slots: Number(schedule.available_slots),
-        status: schedule.status,
+        status: status,
         vehicle_id: schedule.VehicleAssignments?.[0]?.vehicle_id
       }).unwrap();
       alert('Cập nhật ngày khởi hành thành công');
@@ -535,7 +545,7 @@ const EditTourPage = () => {
                           fullWidth
                           label="Ngày bắt đầu"
                           type="date"
-                          value={schedule.start_date.split('T')[0]}
+                          value={new Date(schedule.start_date).toISOString().split('T')[0]}
                           onChange={(e) => handleExistingScheduleChange(schedule.schedule_id, 'start_date', e.target.value)}
                           InputLabelProps={{ shrink: true }}
                         />
@@ -545,7 +555,7 @@ const EditTourPage = () => {
                           fullWidth
                           label="Ngày kết thúc"
                           type="date"
-                          value={schedule.end_date.split('T')[0]}
+                          value={new Date(schedule.end_date).toISOString().split('T')[0]}
                           onChange={(e) => handleExistingScheduleChange(schedule.schedule_id, 'end_date', e.target.value)}
                           InputLabelProps={{ shrink: true }}
                         />
@@ -759,6 +769,7 @@ const EditTourPage = () => {
             </Box>
           </form>
         </CardContent>
+
       </Card>
     </div>
   );

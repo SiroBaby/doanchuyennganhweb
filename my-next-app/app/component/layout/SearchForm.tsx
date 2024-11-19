@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
-import SelectCountry from './Autocomplete'; // Đảm bảo đường dẫn đúng với vị trí file
-
+import SelectCountry from './Autocomplete';
 const Container = styled.div`
   display: flex;
   align-items: center;
