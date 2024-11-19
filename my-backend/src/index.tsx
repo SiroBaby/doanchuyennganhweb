@@ -1057,13 +1057,19 @@ const appRouter = t.router({
           }
         });
 
-        // Send QR code to customer's email
-        await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
+        try {
+          await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
+          console.log('QR code email sent successfully');
+        } catch (emailError) {
+          // Log email error but don't fail the booking creation
+          console.error('Failed to send QR code email:', emailError);
+          // Có thể thêm notification hoặc retry logic ở đây
+        }
 
         return booking;
       } catch (error) {
-        console.error('Error creating booking:', error);
-        throw new Error('Could not create booking');
+        console.error('Error in createBooking:', error);
+        throw new Error(error instanceof Error ? error.message : 'Could not create booking');
       }
     }),
 
@@ -1158,21 +1164,43 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER, // email của bạn
     pass: process.env.EMAIL_PASS  // mật khẩu ứng dụng của gmail
+  },
+  debug: true, // Thêm debug để xem log chi tiết
+  logger: true // Thêm logger
+});
+
+// Kiểm tra kết nối email khi khởi động server
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('Email configuration error:', error);
+  } else {
+    console.log('Email server is ready to send messages');
   }
 });
 
 // Hàm gửi email với QR code
 async function sendBookingQRCode(bookingId: number, customerEmail: string, tourName: string) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Email configuration missing');
+  }
+
   try {
+    console.log('Starting to send email to:', customerEmail);
+    
     // Tạo URL để kiểm tra booking
     const bookingUrl = `https://doanchuyennganhweb.vercel.app/checked/${bookingId}`;
+    console.log('Generated booking URL:', bookingUrl);
     
     // Tạo QR code
     const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl);
+    console.log('Generated QR code');
 
     // Tạo nội dung email
     const mailOptions = {
-      from: process.env.EMAIL_USER,
+      from: {
+        name: 'Tour Booking System',
+        address: process.env.EMAIL_USER
+      },
       to: customerEmail,
       subject: 'Booking Confirmation QR Code',
       html: `
@@ -1190,12 +1218,15 @@ async function sendBookingQRCode(bookingId: number, customerEmail: string, tourN
       }]
     };
 
-    // Gửi email
-    await transporter.sendMail(mailOptions);
-    console.log('QR Code sent to email successfully');
+    // Gửi email và đợi kết quả
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.response);
+    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    
+    return info;
   } catch (error) {
-    console.error('Error sending QR code email:', error);
-    throw error;
+    console.error('Detailed email sending error:', error);
+    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
