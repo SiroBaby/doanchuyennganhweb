@@ -161,7 +161,7 @@ export interface TourResponses extends Tour {
 export const tourApi = createApi({
   reducerPath: 'tourApi',
   tagTypes: ['Tour'], // Add this line to define tag types
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:4000/trpc' }),
+  baseQuery: fetchBaseQuery({ baseUrl: 'https://doanchuyennganhweb.onrender.com/trpc' }),
   endpoints: (builder) => ({
     getLocations: builder.query<Location[], void>({
       query: () => 'location.getLocations',
