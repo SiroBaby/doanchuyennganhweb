@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useGetTourByIdQuery, useGetSchedulesByTourIdQuery } from '@/app/store/api/tourapi';
+import { useGetTourByIdQuery, useGetSchedulesByTourIdQuery, TourSchedule } from '@/app/store/api/tourapi';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -11,25 +11,16 @@ import { useAuth } from "@clerk/nextjs";
 interface Tour {
   tour_id: number;
   tour_name: string;
-  description: string;
-  duration: string;
-  price_range: string;
+  description: string | null;  // Change this to allow null
+  duration: string | null;     // Change this to allow null
+  price_range: string | null;  // Change this to allow null
   max_participants: number;
   location_id: number;
   tour_type_id: number;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at?: Date;
+  created_at: string;         // Change from Date to string
+  updated_at: string;         // Change from Date to string
+  deleted_at?: string | null; // Change from Date to string|null
   Reviews?: Review[];
-}
-
-interface TourSchedule {
-  schedule_id: number;
-  tour_id: number;
-  start_date: Date;
-  end_date: Date;
-  available_slot: number;
-  base_price: number;
 }
 
 interface Review {
@@ -276,6 +267,9 @@ const TourDetailPage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  // Add type assertion here
+  const tourData = tour as unknown as Tour;
+
   return (
     <div className="min-h-screen !bg-white dark:!bg-dark-sidebar text-gray-700 dark:text-dark-text">
       <main className="container mx-auto px-4 py-6">
@@ -343,7 +337,7 @@ const TourDetailPage = () => {
           </div>
           
           <div>
-            <TourInfo tour={tour} schedules={schedules} />
+            <TourInfo tour={tourData} schedules={schedules} />
           </div>
         </div>
       </main>
