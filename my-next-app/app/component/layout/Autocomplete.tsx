@@ -68,7 +68,7 @@ const SelectCountry = () => {
   ];
 
   return (
-    <div className="w-full max-w-md mx-auto p-4">
+    <div className="w-full max-w-md mx-auto">
       <Autocomplete
         id="province-select"
         options={provinces}

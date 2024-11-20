@@ -5,7 +5,7 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   background-color: #eaeaea;
-  padding: 15px;
+  padding: 10px;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   font-family: 'Arial', sans-serif;
@@ -13,19 +13,19 @@ const Container = styled.div`
 
 const InputContainer = styled.div`
   flex: 1;
-  display: flex;
+  display: center;
   flex-direction: column;
-  margin-right: 12px;
+  margin-right: 20px;
 
   label {
     font-weight: 500;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     color: #555;
   }
 
   input {
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: 5px;
     padding: 10px;
     font-size: 14px;
     transition: border-color 0.3s;
