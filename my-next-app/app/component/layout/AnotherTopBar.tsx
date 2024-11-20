@@ -1,6 +1,6 @@
 "use client";
 import { toggleDarkMode } from "@/app/store/slices/darkModeSlices";
-import { useClerk, UserButton, useUser } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import { FormControl, MenuItem, SvgIcon } from "@mui/material";
@@ -15,8 +15,7 @@ const TopBar = ({ }: { onToggleSidebar: () => void }) => {
   const [language, setLanguage] = React.useState("10");
   const dispatch = useDispatch();
   const darkMode = useSelector((state: { darkMode: { darkMode: boolean } }) => state.darkMode.darkMode);
-  const { user, isSignedIn } = useUser(); // Use Clerk's hook
-  const { signOut } = useClerk(); // Import Clerk's signOut function
+  const { user, isSignedIn } = useUser();
   const [userName, setUserName] = useState("");
   
   useEffect(() => {
@@ -74,12 +73,7 @@ const TopBar = ({ }: { onToggleSidebar: () => void }) => {
                 <UserButton/>
               </div>
               <span className="text-lg">Hi, {userName}</span>
-              <span
-                className="text-red-600 underline cursor-pointer hover:text-red-700"
-                onClick={() => signOut()}
-              >
-                Đăng xuất
-              </span>
+              
             </div>
           ) : (
             <Link href="/sign-in">
