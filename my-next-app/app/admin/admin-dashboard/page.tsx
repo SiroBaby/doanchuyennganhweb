@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { Card, CardContent, Typography} from "@mui/material";
+import { Card, CardContent, Typography, CircularProgress } from "@mui/material";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
 import { TooltipProps } from "recharts";
 import { SvgIcon } from "@mui/material";
@@ -8,22 +8,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import TourIcon from '@mui/icons-material/Tour';
 import "../../globals.css";
-
-const monthlyData = [
-  { name: "Jan", income: 4000, tours: 24 },
-  { name: "Feb", income: 3000, tours: 13 },
-  { name: "Mar", income: 5000, tours: 22 },
-  { name: "Apr", income: 4500, tours: 34 },
-  { name: "May", income: 6000, tours: 28 },
-  { name: "Jun", income: 5500, tours: 31 },
-];
-
-const tourTypes = [
-  { name: "Beach", value: 400 },
-  { name: "Mountain", value: 300 },
-  { name: "City", value: 300 },
-  { name: "Cultural", value: 200 },
-];
+import { useGetDashboardStatsQuery } from "@/app/store/api/dashboardapi";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
@@ -34,7 +19,7 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
         <p className="font-bold text-gray-700">{`${label}`}</p>
         {payload.map((entry, index) => (
           <p key={`item-${index}`} style={{ color: entry.color }}>
-            {`${entry.name}: ${entry.value}`}
+            {`${entry.name}: ${(entry.value ?? 0).toLocaleString()} ${entry.name === 'income' ? 'VND' : ''}`}
           </p>
         ))}
       </div>
@@ -44,9 +29,28 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
 };
 
 const Page = () => {
+  const { data: dashboardStats, isLoading } = useGetDashboardStatsQuery();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <CircularProgress />
+      </div>
+    );
+  }
+
+  const monthlyData = Object.entries(dashboardStats?.monthlyStats || {}).map(([name, data]) => ({
+    name,
+    ...data,
+  }));
+
+  const tourTypeData = dashboardStats?.tourTypeStats.map(stat => ({
+    name: stat.TourType.type_name,
+    value: stat._count,
+  })) || [];
+
   return (
-    <div className=" bg-gray-100 dark:bg-dark-body transition-colors duration-200">
-      {/* Main content */}
+    <div className="bg-gray-100 dark:bg-dark-body transition-colors duration-200">
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-6">
           {/* Summary Cards */}
@@ -58,17 +62,16 @@ const Page = () => {
                     Total Earning Today
                   </Typography>
                   <Typography variant="h4" className="font-bold">
-                    3.000.000VND
+                    {dashboardStats?.todayEarnings.toLocaleString()} VND
                   </Typography>
                 </div>
                 <div>
-                  <SvgIcon
-                    component={MonetizationOnIcon}
-                    className="!h-auto !w-16"
-                  />
+                  <SvgIcon component={MonetizationOnIcon} className="!h-auto !w-16" />
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Repeat similar updates for other cards */}
             <Card className="!bg-gradient-to-r !from-blue-500 !to-blue-600 !text-white !shadow-lg !transition-all !duration-300 !hover:shadow-xl hover:scale-105">
               <CardContent className="!flex justify-between items-center">
                 <div>
@@ -76,7 +79,7 @@ const Page = () => {
                     Total Orders
                   </Typography>
                   <Typography variant="h4" className="font-bold">
-                    3
+                    {dashboardStats?.totalBookings || 0}
                   </Typography>
                 </div>
                 <div>
@@ -91,7 +94,7 @@ const Page = () => {
                     Tours Waiting
                   </Typography>
                   <Typography variant="h4" className="font-bold">
-                    5
+                    {dashboardStats?.pendingTours || 0}
                   </Typography>
                 </div>
                 <div>
@@ -101,21 +104,16 @@ const Page = () => {
             </Card>
           </div>
 
-          {/* Charts */}
+          {/* Charts section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Monthly Income Chart */}
             <Card className="dark:bg-dark-sidebar shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardContent>
-                <Typography
-                  variant="h6"
-                  className="font-bold mb-4 text-gray-700  dark:text-dark-text"
-                >
+                <Typography variant="h6" className="font-bold mb-4 text-gray-700 dark:text-dark-text">
                   Monthly Income
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart
-                    data={monthlyData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
+                  <AreaChart data={monthlyData}>
                     <defs>
                       <linearGradient
                         id="colorIncome"
@@ -151,18 +149,17 @@ const Page = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+
+            {/* Tour Types Distribution Chart */}
             <Card className="dark:bg-dark-sidebar shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardContent>
-                <Typography
-                  variant="h6"
-                  className="font-bold mb-4 text-gray-700 dark:text-dark-text"
-                >
+                <Typography variant="h6" className="font-bold mb-4 text-gray-700 dark:text-dark-text">
                   Tour Types Distribution
                 </Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={tourTypes}
+                      data={tourTypeData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -170,7 +167,7 @@ const Page = () => {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {tourTypes.map((entry, index) => (
+                      {tourTypeData.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}

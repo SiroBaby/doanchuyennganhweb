@@ -157,6 +157,49 @@ export interface TourResponses extends Tour {
   Reviews?: Review[]; // Thêm phần review nếu cần
 }
 
+// Add these interfaces
+export interface Booking {
+  booking_id: number;
+  user_id: string;
+  schedule_id: number;
+  booking_date: string;
+  number_of_people: number;
+  total_price: number;
+  booking_status: string;
+  payment_status: string;
+  User: {
+    full_name: string;
+    email: string;
+    phone_number: string | null;
+  };
+  TourSchedule: {
+    Tour: {
+      tour_name: string;
+      duration: string;
+      Location: {
+        location_name: string;
+      };
+    };
+    VehicleAssignments: Array<{
+      Vehicle: {
+        vehicle_type: string;
+        vehicle_code: string;
+      };
+    }>;
+  };
+  Invoices: Array<{
+    amount: number;
+    payment_status: string;
+  }>;
+  Payments: Array<{
+    amount: number;
+    payment_date: string;
+    PaymentMethod: {
+      method_name: string;
+    };
+  }>;
+}
+
 // API definition
 export const tourApi = createApi({
   reducerPath: 'tourApi',
@@ -250,6 +293,10 @@ export const tourApi = createApi({
       query: (tourId) => `tour.getReviewsByTourId?input=${tourId}`,
       transformResponse: (response: ApiResponse<Review[]>) => response.result.data,
     }),
+    getBookings: builder.query<Booking[], void>({
+      query: () => 'getBookings',
+      transformResponse: (response: ApiResponse<Booking[]>) => response.result.data,
+    }),
   }),
 });
 
@@ -267,5 +314,5 @@ export const {
   useUpdateScheduleMutation,
   useGetSchedulesByTourIdQuery,
   useGetReviewsByTourIdQuery,
-
+  useGetBookingsQuery,
 } = tourApi;

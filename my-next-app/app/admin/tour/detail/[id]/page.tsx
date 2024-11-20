@@ -15,11 +15,49 @@ import {
     List,
     ListItem,
     ListItemText,
-    Typography
+    Typography,
+    Rating
 } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from "@clerk/nextjs";
+
+interface Review {
+    review_id: number;
+    user_id: string;
+    rating: number;
+    comment: string;
+    review_date: string;
+    User: {
+        full_name: string;
+    };
+}
+
+const ReviewSection = ({ reviews = [] }: { reviews: Review[] }) => {
+    return (
+        <div className="space-y-4">
+            {reviews.length > 0 ? (
+                reviews.map((review) => (
+                    <div key={review.review_id} className="bg-gray-50 dark:bg-dark-sidebar p-4 rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold">{review.User.full_name}</span>
+                            <Rating value={review.rating} readOnly size="small" />
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300">{review.comment}</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                            {new Date(review.review_date).toLocaleDateString('vi-VN')}
+                        </p>
+                    </div>
+                ))
+            ) : (
+                <Typography className="!text-gray-700 dark:!text-gray-300 italic">
+                    Chưa có đánh giá nào
+                </Typography>
+            )}
+        </div>
+    );
+};
 
 const TourDetailPage = () => {
     const router = useRouter();
@@ -76,13 +114,13 @@ const TourDetailPage = () => {
                 <CardContent>
                     {/* Action Buttons */}
                     <Box position="absolute" top={10} right={10}>
-                        <IconButton 
+                        <IconButton
                             color="primary"
                             onClick={() => router.push(`/admin/tour/edit/${tour.tour_id}`)}
                         >
                             <EditIcon />
                         </IconButton>
-                        <IconButton 
+                        <IconButton
                             color="error"
                             onClick={handleDelete}
                         >
@@ -183,9 +221,17 @@ const TourDetailPage = () => {
                                                         Trạng thái: {schedule.status}
                                                     </Typography>
                                                     {schedule.VehicleAssignments?.[0] && (
-                                                        <Typography variant="body2">
-                                                            Phương tiện: {schedule.VehicleAssignments[0].Vehicle.vehicle_type} - {schedule.VehicleAssignments[0].Vehicle.vehicle_code}
-                                                        </Typography>
+                                                        <Box>
+                                                            <Typography variant="body2">
+                                                                Phương tiện: {schedule.VehicleAssignments[0].Vehicle.vehicle_type} - {schedule.VehicleAssignments[0].Vehicle.vehicle_code}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Phương tiện id: {schedule.VehicleAssignments[0].vehicle_id}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Ngày khởi hành id: {schedule.schedule_id}
+                                                            </Typography>
+                                                        </Box>
                                                     )}
                                                 </Box>
                                             }
@@ -205,9 +251,7 @@ const TourDetailPage = () => {
                         <Typography variant="h5" className="!font-bold !text-gray-800 dark:!text-gray-200">
                             Đánh giá
                         </Typography>
-                        <Typography className="!text-gray-700 dark:!text-gray-300 italic">
-                            Chưa có đánh giá nào
-                        </Typography>
+                        <ReviewSection reviews={tour.Reviews || []} />
                     </Box>
                 </CardContent>
             </Card>

@@ -1,7 +1,11 @@
+'use client';
 import React from 'react';
 import {
   Card,
   CardContent,
+  Chip,
+  CircularProgress,
+  Typography,
   Table,
   TableBody,
   TableCell,
@@ -12,19 +16,46 @@ import {
   Paper
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { useGetBookingsQuery } from '@/app/store/api/tourapi';
+import { useRouter } from 'next/navigation';
 
 const OrderPage = () => {
-  // Sample order data
-  const orders = [
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-    { id: 1, userId: 'User', vehicleID: 'xyz', scheduleID: 'abc', date: '15/01/2004' },
-  ];
+  const { data: bookings = [], isLoading, error } = useGetBookingsQuery();
+  const router = useRouter();
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      maximumFractionDigits: 0 
+    }).format(amount);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'success';
+      case 'PENDING':
+        return 'warning';
+      case 'CANCELLED':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const handleViewDetail = (bookingId: number) => {
+    router.push(`/admin/order/detail/${bookingId}`);
+  };
+
+  if (isLoading) return <CircularProgress />;
+  if (error) {
+    return (
+      <Typography color="error">
+        Có lỗi xảy ra khi tải dữ liệu
+      </Typography>
+    );
+  }
 
   return (
     <div className="h-screen overflow-y-auto bg-gray-100 dark:bg-dark-body">
@@ -40,61 +71,63 @@ const OrderPage = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        OrderID
+                        Mã đơn
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        UserID
+                        Khách hàng
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        VehicleID
+                        Tour
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        ScheduleID
+                        Số người
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        Date
+                        Tổng tiền
                       </TableCell>
                       <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
-                        Action
+                        Trạng thái
+                      </TableCell>
+                      <TableCell className="!font-bold !text-gray-700 dark:!text-gray-200 !bg-gray-50 dark:!bg-dark-sidebar !text-2xl">
+                        Thao tác
                       </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {orders.map((order, index) => (
+                    {bookings?.map((booking) => (
                       <TableRow 
-                        key={index}
+                        key={booking.booking_id}
                         className="hover:!bg-gray-50 dark:hover:!bg-dark-selected transition-colors duration-150"
                       >
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.id}
+                          {booking.booking_id}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.userId}
+                          {booking.User.full_name}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.vehicleID}
+                          {booking.TourSchedule.Tour.tour_name}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.scheduleID}
+                          {booking.number_of_people}
                         </TableCell>
                         <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
-                          {order.date}
+                          {formatCurrency(Number(booking.total_price))}
+                        </TableCell>
+                        <TableCell className="!text-gray-600 dark:!text-gray-300 !text-xl">
+                          <Chip 
+                            label={booking.payment_status}
+                            color={getStatusColor(booking.payment_status)}
+                          />
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
                             <IconButton 
+                              onClick={() => handleViewDetail(booking.booking_id)}
                               className="!text-blue-500 hover:!bg-blue-50 dark:hover:!bg-blue-900"
                               size="small"
                             >
                               <EditIcon className="!w-7 !h-6" />
                             </IconButton>
-                            <IconButton 
-                              className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900"
-                              size="small"
-                            >
-                              <DeleteIcon className="!w-7 !h-6" />
-                            </IconButton>
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

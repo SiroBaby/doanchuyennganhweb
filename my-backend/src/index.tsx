@@ -2,15 +2,17 @@ import { PrismaClient } from '@prisma/client';
 import { initTRPC } from '@trpc/server';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import bodyParser from 'body-parser';
+import { v2 as cloudinary } from 'cloudinary';
 import cors from 'cors';
+import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import fs from 'fs';
 import multer from 'multer';
+import nodemailer from 'nodemailer';
 import path from 'path';
+import QRCode from 'qrcode';
 import { Webhook } from 'svix';
-import { number, z } from 'zod';
-import { v2 as cloudinary } from 'cloudinary';
-import crypto from 'crypto';
+import { z } from 'zod';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -426,6 +428,51 @@ const vehicleRouter = t.router({
       }
     });
   }),
+  getBookingsByVehicleAndSchedule: t.procedure
+    .input(z.object({
+      vehicle_id: z.number(),
+      schedule_id: z.number(),
+    }))
+    .query(async ({ input }) => {
+      try {
+        // Tìm vehicle assignment trước
+        const vehicleAssignment = await prisma.vehicleAssignment.findFirst({
+          where: {
+            vehicle_id: input.vehicle_id,
+            schedule_id: input.schedule_id,
+          },
+        });
+
+        if (!vehicleAssignment) {
+          throw new Error('Vehicle assignment not found');
+        }
+
+        // Lấy danh sách booking dựa trên assignment_id
+        const bookings = await prisma.booking.findMany({
+          where: {
+            assignment_id: vehicleAssignment.assignment_id,
+          },
+          select: {
+            booking_id: true,
+            booking_status: true,
+            User: {
+              select: {
+                full_name: true,
+                email: true,
+              },
+            },
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+        });
+
+        return bookings;
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        throw new Error('Could not fetch bookings');
+      }
+    }),
 });
 
 const userRouter = t.router({
@@ -823,12 +870,143 @@ const tourTypeRouter = t.router({
   }),
 });
 
+const orderRouter = t.router({
+  getOrderDetails: t.procedure
+    .input(z.number())
+    .query(async ({ input }) => {
+      try {
+      const order = await prisma.booking.findUnique({
+        where: { booking_id: input },
+        include: {
+          User: true,            
+          TourSchedule: {   
+            include: {
+              Tour: {
+                include: {
+                  Location: true
+                }
+              }
+            }
+          },
+          VehicleAssignment: {  
+            include: {
+              Vehicle: true
+            }
+          },
+          Invoices: true,
+        }
+      });
+      return order;
+    } catch (error) {
+      console.error('Error fetching order:', error);
+      throw new Error('Không thể lấy thông tin đơn hàng');
+    }
+    }),
+});
+
+
+const dashboardRouter = t.router({
+  getDashboardStats: t.procedure.query(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [todayEarnings, totalBookings, pendingTours, tourTypeStats, monthlyStatsRaw] = await Promise.all([
+      // Today's earnings
+      prisma.booking.aggregate({
+        where: {
+          booking_date: {
+            gte: today,
+          },
+          payment_status: 'COMPLETED',
+        },
+        _sum: {
+          total_price: true,
+        },
+      }),
+
+      // Total bookings
+      prisma.booking.count({
+        where: {
+          booking_status: {
+            notIn: ['CANCELLED'],
+          },
+        },
+      }),
+
+      // Pending tours
+      prisma.booking.count({
+        where: {
+          booking_status: 'PENDING',
+          payment_status: 'PENDING',
+        },
+      }),
+
+      // Tour type stats
+      prisma.$queryRaw`
+        SELECT 
+          t.tour_type_id,
+          COUNT(*) as _count,
+          tt.type_name
+        FROM Tour t
+        JOIN TourType tt ON t.tour_type_id = tt.type_id
+        WHERE t.deleted_at IS NULL
+        GROUP BY t.tour_type_id, tt.type_name
+      `,
+
+      // Monthly stats using raw SQL query
+      prisma.$queryRaw`
+        SELECT 
+          DATE(b.booking_date) AS booking_date, -- Lấy ngày thay vì ngày giờ
+          SUM(b.total_price) AS total_income,
+          COUNT(*) AS total_tours
+        FROM Booking b
+        WHERE b.payment_status = 'COMPLETED'
+          AND b.booking_date >= ${new Date(today.getFullYear(), today.getMonth() - 5, 1)}
+        GROUP BY DATE(b.booking_date)
+        ORDER BY DATE(b.booking_date) ASC
+      `
+    ]);
+
+    // Format monthlyStats
+    const monthlyStats = (monthlyStatsRaw as Array<{ booking_date: Date; total_income: bigint; total_tours: bigint }>).reduce(
+      (acc, stat) => {
+        const month = new Date(stat.booking_date).toLocaleString('default', { month: 'short' }); // Chuyển ngày thành tên tháng
+        if (!acc[month]) {
+          acc[month] = { income: 0, tours: 0 };
+        }
+        acc[month].income += Number(stat.total_income) || 0; // Chuyển BigInt sang Number
+        acc[month].tours += Number(stat.total_tours) || 0; // Chuyển BigInt sang Number
+        return acc;
+      },
+      {} as Record<string, { income: number; tours: number }>
+    );
+
+    return {
+      todayEarnings: Number(todayEarnings._sum.total_price) || 0,
+      totalBookings,
+      pendingTours,
+      tourTypeStats: (tourTypeStats as Array<{ tour_type_id: number; _count: number; type_name: string }>).map((stat) => ({
+        _count: Number(stat._count),
+        tour_type_id: stat.tour_type_id,
+        TourType: {
+          type_id: stat.tour_type_id,
+          type_name: stat.type_name,
+        },
+      })),
+      monthlyStats,
+    };
+  }),
+});
+
+
 const appRouter = t.router({
   vehicle: vehicleRouter,
   user: userRouter,
   tour: TourRouter,
   location: locationRouter,
   tourType: tourTypeRouter,
+  order: orderRouter,
+  dashboard: dashboardRouter,
   getScheduleById: t.procedure
     .input(z.number())
     .query(async ({ input }) => {
@@ -881,6 +1059,27 @@ const appRouter = t.router({
           throw new Error('No vehicle assigned to this schedule');
         }
 
+        // Get schedule and tour information
+        const schedule = await prisma.tourSchedule.findUnique({
+          where: { schedule_id: input.schedule_id },
+          include: {
+            Tour: true
+          }
+        });
+
+        if (!schedule) {
+          throw new Error('Schedule not found');
+        }
+
+        // Get user email
+        const user = await prisma.user.findUnique({
+          where: { user_id: input.user_id }
+        });
+
+        if (!user) {
+          throw new Error('User not found');
+        }
+
         // Create booking with the vehicle assignment
         const booking = await prisma.booking.create({
           data: {
@@ -906,10 +1105,19 @@ const appRouter = t.router({
           }
         });
 
+        try {
+          await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
+          console.log('QR code email sent successfully');
+        } catch (emailError) {
+          // Log email error but don't fail the booking creation
+          console.error('Failed to send QR code email:', emailError);
+          // Có thể thêm notification hoặc retry logic ở đây
+        }
+
         return booking;
       } catch (error) {
-        console.error('Error creating booking:', error);
-        throw new Error('Could not create booking');
+        console.error('Error in createBooking:', error);
+        throw new Error(error instanceof Error ? error.message : 'Could not create booking');
       }
     }),
 
@@ -958,8 +1166,146 @@ const appRouter = t.router({
         where: { booking_id: input.booking_id },
         data: { payment_status: input.payment_status }
       });
-    })
+    }),
+
+  getBookings: t.procedure.query(async () => {
+    return await prisma.booking.findMany({
+      include: {
+        User: {
+          select: {
+            full_name: true,
+            email: true,
+            phone_number: true
+          }
+        },
+        TourSchedule: {
+          include: {
+            Tour: {
+              include: {
+                Location: true,
+              }
+            },
+            VehicleAssignments: {
+              include: {
+                Vehicle: true
+              }
+            }
+          }
+        },
+        Invoices: true,
+        Payments: {
+          include: {
+            PaymentMethod: true
+          }
+        }
+      },
+      orderBy: {
+        created_at: 'desc'
+      }
+    });
+  })
 });
+
+// Cấu hình nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER, // email của bạn
+    pass: process.env.EMAIL_PASS  // mật khẩu ứng dụng của gmail
+  },
+  debug: true, // Thêm debug để xem log chi tiết
+  logger: true // Thêm logger
+});
+
+// Kiểm tra kết nối email khi khởi động server
+transporter.verify(function(error, success) {
+  if (error) {
+    console.error('Email configuration error:', error);
+  } else {
+    console.log('Email server is ready to send messages');
+  }
+});
+
+// Hàm gửi email với QR code
+async function sendBookingQRCode(bookingId: number, customerEmail: string, tourName: string) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Email configuration missing');
+  }
+
+  try {
+    console.log('Starting to send email to:', customerEmail);
+    
+    // Tạo URL để kiểm tra booking
+    const bookingUrl = `https://doanchuyennganhweb.vercel.app/checked/${bookingId}`;
+    console.log('Generated booking URL:', bookingUrl);
+    
+    // Tạo QR code
+    const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl);
+    console.log('Generated QR code');
+
+    // Tạo nội dung email
+    const mailOptions = {
+      from: {
+        name: 'Tour Booking System',
+        address: process.env.EMAIL_USER
+      },
+      to: customerEmail,
+      subject: 'Booking Confirmation QR Code',
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: auto; background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <h1 style="color: #333; text-align: center;">🎉 Thank You for Booking with Us! 🎉</h1>
+    <h2 style="color: #555; text-align: center;">Your Adventure Awaits!</h2>
+    
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    
+    <h3 style="color: #333;">Booking Details</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><strong>Tour Name:</strong> ${tourName}</li>
+        <li><strong>Booking ID:</strong> ${bookingId}</li>
+    </ul>
+
+    <p style="margin: 20px 0;">Please use the QR code below to easily check your booking status:</p>
+    <div style="text-align: center; margin: 20px 0;">
+        <img 
+            src="${qrCodeDataUrl}" 
+            alt="Booking QR Code" 
+            style="max-width: 200px; border: 1px solid #ddd; padding: 5px; border-radius: 5px;"
+            onerror="this.src='https://via.placeholder.com/200?text=QR+Code+Not+Available';"
+        />
+    </div>
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+    
+    <h3 style="color: #333;">Need Assistance?</h3>
+    <p>If you have any questions or need further support, feel free to contact us:</p>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li><strong>Email:</strong> 2254810056@vaa.edu.vn</li>
+        <li><strong>Phone:</strong> +84 772 153 092</li>
+        <li><strong>Working Hours:</strong> Mon-Fri, 9 AM - 6 PM</li>
+    </ul>
+    
+    <p style="margin: 20px 0; text-align: center;">We look forward to seeing you on the tour!</p>
+    <p style="text-align: center; color: #777; font-size: 0.9em;">© 2024 Your Travel Company. All Rights Reserved.</p>
+</div>
+
+      `,
+      attachments: [{
+        filename: 'booking-qr.png',
+        content: qrCodeDataUrl.split('base64,')[1],
+        encoding: 'base64'
+      }]
+    };
+
+    // Gửi email và đợi kết quả
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.response);
+    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    
+    return info;
+  } catch (error) {
+    console.error('Detailed email sending error:', error);
+    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
 
 app.use(cors());
 app.use('/trpc', createExpressMiddleware({ router: appRouter }));
@@ -1073,12 +1419,29 @@ app.get('/api/schedules/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Express.js (Node.js) Example
+app.post('/api/checked/:id', async (req, res) => {
+  const { id } = req.params;
+
+  // Giả sử bạn có một cơ sở dữ liệu với bảng `users` chứa cột `checked`
+  try {
+    const user = await prisma.booking.update({
+      where: { booking_id: Number(id) },
+      data: { booking_status: 'CHECKED' },
+    });
+
+    return res.status(200).json({ message: 'User checked successfully', user });
+  } catch (error) {
+    return res.status(400).json({ message: 'Failed to check user', error });
+  }
+});
+
 // Create booking endpoint
 app.post('/api/bookings', async (req: Request, res: Response) => {
   try {
     const { user_id, schedule_id, number_of_people, total_price, special_requests } = req.body;
     
-    console.log('Creating booking with data:', { user_id, schedule_id, number_of_people, total_price });
+    console.log('Creating booking with data:', req.body); // Debug log
 
     // Convert number_of_people to integer
     const numberOfPeople = parseInt(number_of_people);
@@ -1090,7 +1453,10 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
 
     // Check if schedule exists and has enough slots
     const schedule = await prisma.tourSchedule.findUnique({
-      where: { schedule_id }
+      where: { schedule_id },
+      include: {
+        Tour: true // Include Tour data for email
+      }
     });
 
     if (!schedule) {
@@ -1110,6 +1476,18 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No vehicle assigned to this schedule' });
     }
 
+    // Get user email for sending QR code
+    const user = await prisma.user.findUnique({
+      where: { user_id }
+    });
+
+    if (!user) {
+      console.error('User not found:', user_id); // Debug log
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    console.log('Found user:', user); // Debug log
+
     // Create booking using transaction to ensure data consistency
     const booking = await prisma.$transaction(async (prisma) => {
       // Create the booking
@@ -1119,11 +1497,11 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
           schedule_id,
           assignment_id: vehicleAssignment.assignment_id,
           booking_date: new Date(),
-          number_of_people: numberOfPeople, // Use the converted integer value
+          number_of_people: numberOfPeople,
           total_price,
           special_requests,
           booking_status: 'PENDING',
-          payment_status: 'PENDING'
+          payment_status: 'COMPLETED'
         }
       });
 
@@ -1132,7 +1510,7 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
         where: { schedule_id },
         data: {
           available_slots: {
-            decrement: numberOfPeople  // Use the converted integer value
+            decrement: numberOfPeople
           }
         }
       });
@@ -1140,11 +1518,30 @@ app.post('/api/bookings', async (req: Request, res: Response) => {
       return newBooking;
     });
 
+    // Add more detailed error handling for email sending
+    try {
+      console.log('Attempting to send email to:', user.email); // Debug log
+      
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        throw new Error('Email configuration missing');
+      }
+
+      await sendBookingQRCode(booking.booking_id, user.email, schedule.Tour.tour_name);
+      console.log('Email sent successfully'); // Debug log
+    } catch (emailError) {
+      console.error('Detailed email sending error:', emailError);
+      // Still return success but with a warning
+      return res.status(201).json({
+        ...booking,
+        warning: 'Booking created but email notification failed'
+      });
+    }
+
     console.log('Booking created successfully:', booking);
     res.status(201).json(booking);
 
   } catch (error) {
-    console.error('Error creating booking:', error);
+    console.error('Detailed booking error:', error);
     res.status(500).json({ 
       error: 'Could not create booking',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -1173,7 +1570,7 @@ app.post('/api/invoices', async (req: Request, res: Response) => {
         user_id,
         amount,
         date: new Date(),
-        payment_status: 'PENDING'
+        payment_status: 'COMPLETED'
       }
     });
 
@@ -1189,17 +1586,15 @@ app.post('/api/invoices', async (req: Request, res: Response) => {
   }
 });
 
-// Update booking status endpoint
 app.patch('/api/bookings/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { payment_status, booking_status } = req.body;
+    const { payment_status } = req.body;
 
     const booking = await prisma.booking.update({
       where: { booking_id: Number(id) },
       data: { 
         payment_status,
-        booking_status 
       }
     });
 

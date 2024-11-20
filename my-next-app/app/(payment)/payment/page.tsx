@@ -65,62 +65,25 @@ const PaymentPage = () => {
     if (!userId || !schedule) return;
 
     try {
-      // 1. Create booking record
-      const bookingData = {
+      // Store pending booking data in localStorage
+      const pendingBookingData = {
         user_id: userId,
         schedule_id: Number(scheduleId),
         number_of_people: formData.numberOfPeople,
         total_price: schedule.base_price * formData.numberOfPeople,
-        special_requests: formData.specialRequests,
-        booking_status: 'PENDING',
-        payment_status: 'PENDING'
+        special_requests: formData.specialRequests
       };
+      localStorage.setItem('pendingBooking', JSON.stringify(pendingBookingData));
 
-      const bookingResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
-      });
-
-      if (!bookingResponse.ok) {
-        const error = await bookingResponse.json();
-        throw new Error(error.details || 'Failed to create booking');
-      }
-
-      const bookingResult = await bookingResponse.json();
-      console.log('Booking created:', bookingResult);
-
-      // 2. Create invoice
-      const invoiceData = {
-        booking_id: bookingResult.booking_id,
-        user_id: userId,
-        amount: schedule.base_price * formData.numberOfPeople,
-        payment_status: 'PENDING'
-      };
-
-      const invoiceResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/invoices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invoiceData)
-      });
-
-      if (!invoiceResponse.ok) {
-        const error = await invoiceResponse.json();
-        throw new Error(error.details || 'Failed to create invoice');
-      }
-
-      const invoiceResult = await invoiceResponse.json();
-      console.log('Invoice created:', invoiceResult);
-
-      // 3. Create VNPay payment URL
+      // Create VNPay payment URL
       const paymentData = {
-        orderId: `TOUR_${bookingResult.booking_id}_${Date.now()}`,
-        amount: schedule.base_price * formData.numberOfPeople,
-        orderInfo: `Thanh toan tour ${schedule.Tour.tour_name}`, // Update this line
+        orderId: `TOUR_${Date.now()}`,
+        amount: pendingBookingData.total_price,
+        orderInfo: `Thanh toan tour ${schedule.Tour.tour_name}`,
         bankCode: formData.bankCode,
         language: formData.language,
         ipAddr: '127.0.0.1',
-        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment-result` // Update this line
+        returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment-result`
       };
 
       const vnpayResponse = await fetch('/api/create-payment-url', {

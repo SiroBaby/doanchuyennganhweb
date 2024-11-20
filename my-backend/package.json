@@ -24,12 +24,16 @@
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.11.3",
+    "nodemailer": "^6.9.16",
+    "qrcode": "^1.5.4",
     "svix": "^1.37.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/nodemailer": "^6.4.16",
+    "@types/qrcode": "^1.5.5",
     "prisma": "^5.19.1",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.0.0"
