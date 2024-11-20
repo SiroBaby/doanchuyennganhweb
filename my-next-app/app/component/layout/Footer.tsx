@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Image from "next/image";
-import Link from "next/link";
+//import Link from "next/link";
 import FacebookIcon from '@mui/icons-material/Facebook';
 import GitHubIcon from '@mui/icons-material/GitHub';
 
@@ -25,20 +25,20 @@ const Footer = () => {
             <div className="flex gap-8">
               <div className="flex-1">
                 <ul className="space-y-2">
-                  <li><Link href="/lang-son" className="hover:text-red-600">Lang Sơn</Link></li>
-                  <li><Link href="/ha-giang" className="hover:text-red-600">Hà Giang</Link></li>
-                  <li><Link href="/ha-noi" className="hover:text-red-600">Hà Nội</Link></li>
-                  <li><Link href="/binh-thuan" className="hover:text-red-600">Bình Thuận</Link></li>
-                  <li><Link href="/ba-ria-vung-tau" className="hover:text-red-600">Bà Rịa - Vũng Tàu</Link></li>
+                  <li>Lang Sơn</li>
+                  <li>Hà Giang</li>
+                  <li>Hà Nội</li>
+                  <li>Bình Thuận</li>
+                  <li>Bà Rịa - Vũng Tàu</li>
                 </ul>
               </div>
               <div className="flex-1">
                 <ul className="space-y-2">
-                  <li><Link href="/quang-nam" className="hover:text-red-600">Quảng Nam</Link></li>
-                  <li><Link href="/nha-trang" className="hover:text-red-600">Nha Trang</Link></li>
-                  <li><Link href="/hue" className="hover:text-red-600">Huế</Link></li>
-                  <li><Link href="/ben-tre" className="hover:text-red-600">Bến Tre</Link></li>
-                  <li><Link href="/dong-thap" className="hover:text-red-600">Đồng Tháp</Link></li>
+                  <li>Quảng Nam</li>
+                  <li>Nha Trang</li>
+                  <li>Huế</li>
+                  <li>Bến Tre</li>
+                  <li>Đồng Tháp</li>
                 </ul>
               </div>
             </div>
@@ -50,22 +50,22 @@ const Footer = () => {
         <div className="space-y-4">
             <h3 className="font-bold text-lg">THÔNG TIN</h3>
             <ul className="space-y-2">
-              <li><Link href="/tintuc" className="hover:text-red-600">Tin tức</Link></li>
-              <li><Link href="/danhgia" className="hover:text-red-600">Đánh giá</Link></li>
+              <li>Tin tức</li>
+              <li>Đánh giá</li>
             </ul>
           </div>
           <div className="space-y-4">
             <h3 className="font-bold text-lg">LIÊN HỆ</h3>
             <div className="space-y-2">
               <p>SĐT: 0123456789</p>
-              <a href="https://www.google.com/maps/place/H%E1%BB%8Dc+Vi%E1%BB%87n+H%C3%A0ng+Kh%C3%B4ng+Vi%E1%BB%87t+Nam+CS2/@10.7999506,106.6533982,18.59z/data=!4m6!3m5!1s0x3175292976c117ad:0x5b3f38b21051f84!8m2!3d10.8000211!4d106.6544162!16s%2Fg%2F1td1mcc1?hl=vi-VN&entry=ttu&g_ep=EgoyMDI0MTEwNi4wIKXMDSoASAFQAw%3D%3D">
+              <a className="hover:text-red-600" href="https://www.google.com/maps/place/H%E1%BB%8Dc+Vi%E1%BB%87n+H%C3%A0ng+Kh%C3%B4ng+Vi%E1%BB%87t+Nam+CS2/@10.7999506,106.6533982,18.59z/data=!4m6!3m5!1s0x3175292976c117ad:0x5b3f38b21051f84!8m2!3d10.8000211!4d106.6544162!16s%2Fg%2F1td1mcc1?hl=vi-VN&entry=ttu&g_ep=EgoyMDI0MTEwNi4wIKXMDSoASAFQAw%3D%3D">
                 <p>Địa chỉ: 18A/1 Cộng Hòa, phường 12, Tân Bình, TP.HCM</p>
               </a>
               <div className="flex items-center space-x-4">
-                <a href="https://www.facebook.com/phat.huynhngoc.3" target="_blank" rel="noopener noreferrer">
+                <a className="hover:text-red-600" href="https://www.facebook.com/profile.php?id=61557053777825" target="_blank" rel="noopener noreferrer">
                   <FacebookIcon className="text-2xl" />
                 </a>
-                <a href="https://github.com/SiroBaby" target="_blank" rel="noopener noreferrer">
+                <a className="hover:text-red-600" href="https://github.com/SiroBaby/doanchuyennganhweb" target="_blank" rel="noopener noreferrer">
                   <GitHubIcon className="text-2xl" />
                 </a>
               </div>
