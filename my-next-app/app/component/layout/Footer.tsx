@@ -9,10 +9,10 @@ const Footer = () => {
   return (
     <div className="w-full bg-custom-blue py-8 px-4 md:px-12">
       <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="flex justify-between items-start">
+        <div className="flex justify-around items-start">
           <div className="w-40 h-40 relative">
             <Image
-              src="/logo/logo.png"
+              src="/logo/nonbg-logo.png"
               alt="FAA Travel Logo"
               width={160}
               height={160}
@@ -22,27 +22,38 @@ const Footer = () => {
 
           <div className="space-y-4">
             <h3 className="font-bold text-lg">DU LỊCH TRONG NƯỚC</h3>
-            <ul className="space-y-2">
-              <li><Link href="/lang-son" className="hover:text-blue-600">Lang Sơn</Link></li>
-              <li><Link href="/ha-giang" className="hover:text-blue-600">Hà Giang</Link></li>
-              <li><Link href="/ha-noi" className="hover:text-blue-600">Hà Nội</Link></li>
-              <li><Link href="/binh-thuan" className="hover:text-blue-600">Bình Thuận</Link></li>
-              <li><Link href="/ba-ria-vung-tau" className="hover:text-blue-600">Bà Rịa - Vũng Tàu</Link></li>
-            </ul>
+            <div className="flex gap-8">
+              <div className="flex-1">
+                <ul className="space-y-2">
+                  <li><Link href="/lang-son" className="hover:text-red-600">Lang Sơn</Link></li>
+                  <li><Link href="/ha-giang" className="hover:text-red-600">Hà Giang</Link></li>
+                  <li><Link href="/ha-noi" className="hover:text-red-600">Hà Nội</Link></li>
+                  <li><Link href="/binh-thuan" className="hover:text-red-600">Bình Thuận</Link></li>
+                  <li><Link href="/ba-ria-vung-tau" className="hover:text-red-600">Bà Rịa - Vũng Tàu</Link></li>
+                </ul>
+              </div>
+              <div className="flex-1">
+                <ul className="space-y-2">
+                  <li><Link href="/quang-nam" className="hover:text-red-600">Quảng Nam</Link></li>
+                  <li><Link href="/nha-trang" className="hover:text-red-600">Nha Trang</Link></li>
+                  <li><Link href="/hue" className="hover:text-red-600">Huế</Link></li>
+                  <li><Link href="/ben-tre" className="hover:text-red-600">Bến Tre</Link></li>
+                  <li><Link href="/dong-thap" className="hover:text-red-600">Đồng Tháp</Link></li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-lg text-transparent">.</h3>
-            <ul className="space-y-2">
-              <li>Lạng Sơn</li>
-              <li>Lạng Sơn</li>
-              <li>Lạng Sơn</li>
-              <li>Lạng Sơn</li>
-              <li>Lạng Sơn</li>
-            </ul>
-          </div>
+          
         </div>
 
         <div className="flex justify-between items-start">
+        <div className="space-y-4">
+            <h3 className="font-bold text-lg">THÔNG TIN</h3>
+            <ul className="space-y-2">
+              <li><Link href="/tintuc" className="hover:text-red-600">Tin tức</Link></li>
+              <li><Link href="/danhgia" className="hover:text-red-600">Đánh giá</Link></li>
+            </ul>
+          </div>
           <div className="space-y-4">
             <h3 className="font-bold text-lg">LIÊN HỆ</h3>
             <div className="space-y-2">
@@ -54,21 +65,13 @@ const Footer = () => {
                 <a href="https://www.facebook.com/phat.huynhngoc.3" target="_blank" rel="noopener noreferrer">
                   <FacebookIcon className="text-2xl" />
                 </a>
-                <a href="https://github.com/huyen35" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/SiroBaby" target="_blank" rel="noopener noreferrer">
                   <GitHubIcon className="text-2xl" />
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="font-bold text-lg">THÔNG TIN</h3>
-            <ul className="space-y-2">
-              <li>Tin tức</li>
-              <li>Tin tức</li>
-              <li>Tin tức</li>
-            </ul>
-          </div>
         </div>
       </div>
 
