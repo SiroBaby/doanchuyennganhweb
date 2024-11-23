@@ -927,72 +927,72 @@ const dashboardRouter = t.router({
       // Total bookings
       prisma.booking.count({
         where: {
-          booking_status: {
-            notIn: ['CANCELLED'],
-          },
+          payment_status: 'COMPLETED',
         },
       }),
 
       // Pending tours
-      prisma.booking.count({
+      prisma.tourSchedule.count({
         where: {
-          booking_status: 'PENDING',
-          payment_status: 'PENDING',
+          status: {
+            in: ['ACTIVE', 'FULL'],
+          },
         },
       }),
 
       // Tour type stats
       prisma.$queryRaw`
         SELECT 
-          t.tour_type_id,
-          COUNT(*) as _count,
-          tt.type_name
-        FROM Tour t
+          tt.type_id AS tour_type_id,
+          tt.type_name,
+          COUNT(b.booking_id) AS _count
+        FROM Booking b
+        JOIN TourSchedule ts ON b.schedule_id = ts.schedule_id
+        JOIN Tour t ON ts.tour_id = t.tour_id 
         JOIN TourType tt ON t.tour_type_id = tt.type_id
-        WHERE t.deleted_at IS NULL
-        GROUP BY t.tour_type_id, tt.type_name
+        WHERE b.payment_status = 'COMPLETED'
+        GROUP BY tt.type_id, tt.type_name
+        ORDER BY _count DESC
       `,
 
-      // Monthly stats using raw SQL query
+      // Updated Monthly stats query
       prisma.$queryRaw`
         SELECT 
-          DATE(b.booking_date) AS booking_date, -- Lấy ngày thay vì ngày giờ
-          SUM(b.total_price) AS total_income,
-          COUNT(*) AS total_tours
+          DATE_FORMAT(b.booking_date, '%b') as month,
+          CAST(SUM(b.total_price) AS DECIMAL(15,2)) as total_income,
+          COUNT(*) as total_tours
         FROM Booking b
         WHERE b.payment_status = 'COMPLETED'
-          AND b.booking_date >= ${new Date(today.getFullYear(), today.getMonth() - 5, 1)}
-        GROUP BY DATE(b.booking_date)
-        ORDER BY DATE(b.booking_date) ASC
+        GROUP BY DATE_FORMAT(b.booking_date, '%b'), MONTH(b.booking_date)
+        ORDER BY MONTH(b.booking_date) ASC
       `
-    ]);
-
-    // Format monthlyStats
-    const monthlyStats = (monthlyStatsRaw as Array<{ booking_date: Date; total_income: bigint; total_tours: bigint }>).reduce(
-      (acc, stat) => {
-        const month = new Date(stat.booking_date).toLocaleString('default', { month: 'short' }); // Chuyển ngày thành tên tháng
-        if (!acc[month]) {
-          acc[month] = { income: 0, tours: 0 };
-        }
-        acc[month].income += Number(stat.total_income) || 0; // Chuyển BigInt sang Number
-        acc[month].tours += Number(stat.total_tours) || 0; // Chuyển BigInt sang Number
-        return acc;
-      },
-      {} as Record<string, { income: number; tours: number }>
-    );
+      ]);
+    // Updated monthly stats transformation
+    const monthlyStats = (monthlyStatsRaw as Array<{
+      month: string;
+      total_income: number;
+      total_tours: number;
+    }>).reduce((acc, stat) => {
+      acc[stat.month] = {
+        income: Number(stat.total_income),
+        tours: Number(stat.total_tours)
+      };
+      return acc;
+    }, {} as Record<string, { income: number; tours: number }>);
 
     return {
       todayEarnings: Number(todayEarnings._sum.total_price) || 0,
       totalBookings,
       pendingTours,
-      tourTypeStats: (tourTypeStats as Array<{ tour_type_id: number; _count: number; type_name: string }>).map((stat) => ({
-        _count: Number(stat._count),
-        tour_type_id: stat.tour_type_id,
-        TourType: {
-          type_id: stat.tour_type_id,
-          type_name: stat.type_name,
-        },
-      })),
+      tourTypeStats: (tourTypeStats as Array<{ tour_type_id: number; _count: number; type_name: string }>)
+        .map((stat) => ({
+          _count: Number(stat._count),
+          tour_type_id: stat.tour_type_id,
+          TourType: {
+            type_id: stat.tour_type_id,
+            type_name: stat.type_name,
+          },
+        })),
       monthlyStats,
     };
   }),

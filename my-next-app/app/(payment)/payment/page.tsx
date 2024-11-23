@@ -150,7 +150,7 @@ const PaymentPage = () => {
             className="w-full p-2 border rounded"
             required
           >
-            <option value="">Cổng thanh toán VNPAYQR</option>
+            <option value="">Chọn phương thức thanh toán</option>
             <option value="VNPAYQR">Thanh toán qua ứng dụng hỗ trợ VNPAYQR</option>
             <option value="VNBANK">Thanh toán qua ATM-Tài khoản ngân hàng nội địa</option>
           </select>
