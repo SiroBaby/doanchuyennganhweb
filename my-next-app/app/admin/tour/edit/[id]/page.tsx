@@ -155,6 +155,7 @@ const EditTourPage = () => {
         // Convert string IDs back to numbers for API call
         location_id: Number(formData.location_id),
         tour_type_id: Number(formData.tour_type_id),
+        max_participants: Number(formData.max_participants), // Convert to number
         images: newImageUrls,
         images_to_delete: imagesToDelete,
       }).unwrap();
