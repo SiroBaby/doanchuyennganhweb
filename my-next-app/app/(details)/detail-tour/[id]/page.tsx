@@ -101,15 +101,26 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
   );
 };
 
+const formatDescription = (text: string | undefined | null) => {
+  if (!text) return 'Không có mô tả';
+  return text.split('\n').map((item: string, index: number) => (
+      <span key={index}>
+          {item}
+          <br />
+      </span>
+  ));
+};
+
 const TourDescription = ({ description }: { description: string }) => {
   return (
     <div className="tour-description mt-4">
       <h3 className="font-medium mb-2">Tour Description:</h3>
-      <p className="text-gray-700 dark:text-dark-text text-sm">{description}</p>
+      <div className="text-gray-700 dark:text-dark-text text-sm">
+        {formatDescription(description)}
+      </div>
     </div>
   );
 };
-
 const BookingTable = ({ schedules }: { schedules: TourSchedule[] }) => {
   return (
     <div className="overflow-x-auto mt-4">

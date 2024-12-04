@@ -34,7 +34,7 @@ model TourType {
 model Tour {
   tour_id         Int          @id @default(autoincrement())
   tour_name       String
-  description     String?
+  description     String?      @db.Text
   duration        String?
   price_range     String?
   max_participants Int

@@ -92,6 +92,16 @@ const TourDetailPage = () => {
         }
     };
 
+    const formatDescription = (text: string | undefined | null) => {
+        if (!text) return 'Không có mô tả';
+        return text.split('\n').map((item: string, index: number) => (
+            <span key={index}>
+                {item}
+                <br />
+            </span>
+        ));
+    };
+
     if (isLoading) {
         return (
             <div className="h-screen flex items-center justify-center">
@@ -189,7 +199,7 @@ const TourDetailPage = () => {
                             Mô tả
                         </Typography>
                         <Typography className="!text-gray-700 dark:!text-gray-300">
-                            {tour.description || 'Không có mô tả'}
+                            {formatDescription(tour.description)}
                         </Typography>
                     </Box>
 
