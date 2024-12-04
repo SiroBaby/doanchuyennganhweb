@@ -79,7 +79,7 @@ const PaymentPage = () => {
       const paymentData = {
         orderId: `TOUR_${Date.now()}`,
         amount: pendingBookingData.total_price,
-        orderInfo: `Thanh toan tour ${schedule.Tour.tour_name}`,
+        orderInfo: `Thanh toan tour ${schedule.Tour.tour_id}`,
         bankCode: formData.bankCode,
         language: formData.language,
         ipAddr: '127.0.0.1',
