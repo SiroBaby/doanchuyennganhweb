@@ -8,6 +8,7 @@ import StarRateIcon from '@mui/icons-material/StarRate';
 import { Rating } from '@mui/material';
 import { useAuth } from "@clerk/nextjs";
 
+// Định nghĩa interface cho Tour - mô tả cấu trúc dữ liệu của một tour du lịch
 interface Tour {
   tour_id: number;
   tour_name: string;
@@ -17,12 +18,13 @@ interface Tour {
   max_participants: number;
   location_id: number;
   tour_type_id: number;
-  created_at: string;         // Change from Date to string
-  updated_at: string;         // Change from Date to string
-  deleted_at?: string | null; // Change from Date to string|null
+  created_at: string;         // Chuyển từ Date sang string
+  updated_at: string;         // Chuyển từ Date sang string
+  deleted_at?: string | null; // Chuyển từ Date sang string|null
   Reviews?: Review[];
 }
 
+// Interface cho đánh giá tour
 interface Review {
   review_id: number;
   user_id: string;
@@ -34,11 +36,13 @@ interface Review {
   };
 }
 
+// Component hiển thị thông tin đặt tour
 const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }) => {
   const router = useRouter();
-  const { userId, isLoaded } = useAuth();
+  const { userId, isLoaded } = useAuth();// Lấy thông tin người dùng từ Clerk
   const [selectedSchedule, setSelectedSchedule] = useState<number | null>(null);
 
+  // Xử lý chuyển trang đặt tour
   const handleBooking = () => {
     if (!selectedSchedule) {
       alert('Vui lòng chọn ngày khởi hành');
@@ -47,12 +51,15 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
     router.push(`/payment?tourId=${tour.tour_id}&scheduleId=${selectedSchedule}`);
   };
 
+  // Định dạng ngày theo locale Việt Nam
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString('vi-VN');
   };
 
   return (
+    // Layout thông tin và đặt tour
     <div className="flex flex-col w-[300px] h-min-screen sticky top-4 z-50">
+        {/* thông tin cơ bản tour */}
       <div className="bg-gray-100 rounded-lg p-4 mb-4">
         <div className="border-b pb-2 mb-2">
           <div className="text-pink-600 font-bold text-sm mb-1">{tour.tour_name}</div>
@@ -67,6 +74,7 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
         </div>
       </div>
 
+        {/* chọn ngày và đặt tour */}
       <div className="bg-pink-600 text-white rounded-lg p-4">
         <div className="mb-4">
           <div className="mt-4">
@@ -76,6 +84,7 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
               value={selectedSchedule || ''}
               onChange={(e) => setSelectedSchedule(Number(e.target.value))}
             >
+            {/* Render các lựa chọn ngày tour còn slot */}
               <option value="">-- Chọn ngày --</option>
               {schedules
                 .filter(schedule => schedule.status === 'ACTIVE' && schedule.available_slots > 0)
@@ -101,6 +110,7 @@ const TourInfo = ({ tour, schedules }: { tour: Tour; schedules: TourSchedule[] }
   );
 };
 
+// Hàm format mô tả tour, chuyển đổi text sang các dòng React
 const formatDescription = (text: string | undefined | null) => {
   if (!text) return 'Không có mô tả';
   return text.split('\n').map((item: string, index: number) => (
@@ -111,6 +121,7 @@ const formatDescription = (text: string | undefined | null) => {
   ));
 };
 
+// Component hiển thị mô tả tour
 const TourDescription = ({ description }: { description: string }) => {
   return (
     <div className="tour-description mt-4">
@@ -121,6 +132,8 @@ const TourDescription = ({ description }: { description: string }) => {
     </div>
   );
 };
+
+// Component hiển thị bảng lịch trình tour
 const BookingTable = ({ schedules }: { schedules: TourSchedule[] }) => {
   return (
     <div className="overflow-x-auto mt-4">
@@ -156,12 +169,14 @@ const BookingTable = ({ schedules }: { schedules: TourSchedule[] }) => {
   );
 };
 
+// Component quản lý phần đánh giá tour
 const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Review[] }) => {
   const { userId, isLoaded } = useAuth();
   const [rating, setRating] = useState<number>(5);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Xử lý submit đánh giá
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !isLoaded) {
@@ -171,6 +186,7 @@ const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Revi
 
     setIsSubmitting(true);
     try {
+        // Gửi request POST đánh giá
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reviews`, {
         method: 'POST',
         headers: {
@@ -185,9 +201,9 @@ const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Revi
       });
 
       if (response.ok) {
+        // Reset form và reload trang để hiển thị đánh giá mới
         setComment('');
         setRating(5);
-        // Refresh the page to show new review
         window.location.reload();
       } else {
         throw new Error('Failed to submit review');
@@ -201,6 +217,7 @@ const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Revi
 
   return (
     <div className="mt-4">
+        {/* Form nhập đánh giá */}
       {userId && isLoaded && (
         <form onSubmit={handleSubmitReview} className="mb-6 p-4 bg-white rounded-lg shadow">
           <h3 className="font-bold mb-4">Viết đánh giá</h3>
@@ -232,6 +249,7 @@ const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Revi
       )}
 
       <div className="space-y-4">
+        {/* Hiển thị danh sách các đánh giá */}
         {reviews.length > 0 ? (
           reviews.map((review) => (
             <div key={review.review_id} className="bg-white p-4 rounded-lg shadow">
@@ -253,24 +271,29 @@ const ReviewSection = ({ tourId, reviews = [] }: { tourId: number; reviews: Revi
   );
 };
 
+// Component trang chi tiết tour - component chính
 const TourDetailPage = () => {
   const params = useParams();
   const tourId = Number(params.id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
+  // Fetch dữ liệu tour và lịch trình
   const { data: tour, isLoading: tourLoading } = useGetTourByIdQuery(tourId);
   const { data: schedules = [], isLoading: schedulesLoading } = useGetSchedulesByTourIdQuery(tourId);
 
+  // Xử lý trạng thái loading
   if (tourLoading || schedulesLoading) {
     return <div>Loading...</div>;
   }
 
+  // Xử lý trường hợp không tìm thấy tour
   if (!tour) {
     return <div>Tour not found</div>;
   }
 
   const images = tour.TourImages || [];
   
+  // Hàm điều hướng ảnh
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -279,16 +302,18 @@ const TourDetailPage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  // Add type assertion here
+  // Ép kiểu dữ liệu tour
   const tourData = tour as unknown as Tour;
 
   return (
+    // Layout trang chi tiết tour
     <div className="min-h-screen !bg-white dark:!bg-dark-sidebar text-gray-700 dark:text-dark-text">
       <main className="container mx-auto px-4 py-6">
         <div className="flex justify-center mb-8">
           <h1 className="text-3xl text-pink-600 font-bold text-center">{tour.tour_name}</h1>
         </div>
 
+        {/* Grid layout hiển thị thông tin tour */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <div className="relative h-[300px] mb-6">
@@ -301,6 +326,7 @@ const TourDetailPage = () => {
                   className="rounded-lg transition-opacity duration-500"
                 />
               </div>
+              {/* Các nút điều hướng và indicator ảnh */}
               {images.length > 1 && (
                 <>
                   <button
@@ -330,9 +356,12 @@ const TourDetailPage = () => {
               )}
             </div>
             
+            {/* Mô tả tour */}
             <TourDescription description={tour.description || ''} />
             
+            {/* Các phần chi tiết có thể mở rộng */}
             <div className="mt-6 space-y-4">
+                {/* Phần lịch trình */}
               <details className="!bg-white dark:!bg-dark-sidebar p-4 rounded-lg">
                 <summary className="font-bold flex cursor-pointer list-none text-pink-600">
                   <CalendarMonthIcon />LỊCH
@@ -348,6 +377,7 @@ const TourDetailPage = () => {
             
           </div>
           
+          {/* Sidebar thông tin đặt tour */}
           <div>
             <TourInfo tour={tourData} schedules={schedules} />
           </div>
